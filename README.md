@@ -1,0 +1,33 @@
+This is a Kotlin Multiplatform project targeting Android, Desktop (JVM), Server.
+
+* [/app/shared](./app/shared/src) is for code that will be shared across your Compose Multiplatform
+  applications.
+  It contains several subfolders:
+    - [commonMain](./app/shared/src/commonMain/kotlin) is for code that’s common for all targets.
+    - Other folders are for Kotlin code that will be compiled for only the platform indicated in the
+      folder name.
+      Similarly, if you want to edit the Desktop (JVM) specific part,
+      the [jvmMain](./app/shared/src/jvmMain/kotlin)
+      folder is the appropriate location.
+
+* [/core](./core/src) is for the code that will be shared between all targets in the project.
+  The most important subfolder is [commonMain](./core/src/commonMain/kotlin). If preferred, you
+  can add code to the platform-specific folders here too.
+
+* [/server](./server/src/main/kotlin) is for the Ktor server application.
+
+### Running the apps
+
+Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these
+commands and options:
+
+- Android app: `./gradlew :app:androidApp:assembleDebug`
+- Desktop app:
+    - Hot reload: `./gradlew :app:desktopApp:hotRun --auto`
+    - Standard run: `./gradlew :app:desktopApp:run`
+- Server: `./gradlew :server:run`
+
+---
+
+Learn more
+about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
