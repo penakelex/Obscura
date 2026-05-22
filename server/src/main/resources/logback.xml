@@ -7,9 +7,15 @@
             </pattern>
         </encoder>
     </appender>
-    <root level="trace">
+
+    <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
+
     <logger name="org.eclipse.jetty" level="INFO" />
     <logger name="io.netty" level="INFO" />
+    <logger name="org.postgresql" level="WARN" />
+    <logger name="com.zaxxer.hikari" level="INFO" />
+
+    <logger name="org.jetbrains.exposed" level="DEBUG" />
 </configuration>

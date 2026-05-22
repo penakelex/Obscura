@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package obscura;
+
+option java_multiple_files = true;
+option java_package = "org.penakelex.obscura.proto";
+
+message NoteProto {
+  string id = 1;
+  bytes encrypted_data = 2;
+  uint32 cipher_type = 3;
+  int64 updated_at = 4;
+  bool is_deleted = 5;
+}
+
+message ClientSyncPayload {
+  repeated NoteProto client_changes = 1;
+  int64 last_sync_timestamp = 2;
+}
+
+message ServerSyncPayload {
+  repeated NoteProto server_changes = 1;
+  int64 new_sync_timestamp = 2;
+  SyncStatus status = 3;
+}
+
+enum SyncStatus {
+  SUCCESS = 0;
+  PARTIAL = 1;
+  CONFLICT_RESOLVED = 2;
+  AUTH_ERROR = 3;
+}
+
+service SecureNotesSync {
+  rpc SyncNotes(stream ClientSyncPayload) returns (stream ServerSyncPayload);
+}
