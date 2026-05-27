@@ -70,6 +70,30 @@ sealed class ValidationException(
         )
     )
 
+    class SessionIdRequired : ValidationException(
+        errorCode = ErrorCodes.Validation.SESSION_ID_REQUIRED,
+        message = "Session ID is required",
+        fieldErrors = listOf(
+            FieldError(
+                "sessionId",
+                ErrorCodes.Validation.SESSION_ID_REQUIRED,
+                "Session ID path parameter is missing or invalid"
+            )
+        )
+    )
+
+    class CannotRevokeCurrentSession : ValidationException(
+        errorCode = ErrorCodes.Validation.CANNOT_REVOKE_CURRENT_SESSION,
+        message = "Use /logout to revoke the current session",
+        fieldErrors = listOf(
+            FieldError(
+                "sessionId",
+                ErrorCodes.Validation.CANNOT_REVOKE_CURRENT_SESSION,
+                "Cannot revoke current session via this endpoint"
+            )
+        )
+    )
+
     class MultipleFields(errors: List<FieldError>) :
         ValidationException(
             errorCode = ErrorCodes.Validation.MULTIPLE_FIELDS_INVALID,

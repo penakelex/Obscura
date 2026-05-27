@@ -7,23 +7,21 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.update
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.penakelex.obscura.db.tables.Users
 import org.penakelex.obscura.db.model.User
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-object UserRepository {
+class UserRepository {
     suspend fun create(email: String, passwordHash: String): Uuid? =
         withContext(Dispatchers.IO) {
             suspendTransaction {
                 val existing = Users.selectAll()
                     .where { Users.email eq email }
                     .singleOrNull()
-
-                if (existing != null) {
-                    return@suspendTransaction null
-                }
+                if (existing != null) return@suspendTransaction null
 
                 Users.insert {
                     it[this.email] = email
@@ -64,16 +62,14 @@ object UserRepository {
             }
         }
 
-    suspend fun updatePassword(
-        userId: Uuid,
-        newPasswordHash: String
-    ) = withContext(Dispatchers.IO) {
-        suspendTransaction {
-            Users.update({ Users.id eq userId }) {
-                it[passwordHash] = newPasswordHash
+    suspend fun updatePassword(userId: Uuid, newPasswordHash: String) =
+        withContext(Dispatchers.IO) {
+            suspendTransaction {
+                Users.update({ Users.id eq userId }) {
+                    it[passwordHash] = newPasswordHash
+                }
             }
         }
-    }
 
     suspend fun updateEmail(userId: Uuid, newEmail: String) =
         withContext(Dispatchers.IO) {
@@ -81,6 +77,13 @@ object UserRepository {
                 Users.update({ Users.id eq userId }) {
                     it[email] = newEmail
                 }
+            }
+        }
+
+    suspend fun delete(userId: Uuid): Boolean =
+        withContext(Dispatchers.IO) {
+            suspendTransaction {
+                Users.deleteWhere { Users.id eq userId } > 0
             }
         }
 }

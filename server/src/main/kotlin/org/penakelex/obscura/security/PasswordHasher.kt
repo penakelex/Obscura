@@ -6,15 +6,13 @@ import com.password4j.types.Hmac
 import org.penakelex.obscura.config.ServerConfig
 import org.slf4j.LoggerFactory
 
-object PasswordHasher {
+class PasswordHasher(private val config: ServerConfig.Security.Password) {
     private val logger =
         LoggerFactory.getLogger(PasswordHasher::class.java)
 
     private val hashingFunction: HashingFunction by lazy {
-        val algorithm =
-            ServerConfig.security.password.algorithm.uppercase()
-                .trim()
-        val parameters = ServerConfig.security.password.hashParameters
+        val algorithm = config.algorithm.uppercase().trim()
+        val parameters = config.hashParameters
 
         logger.info(
             "Initializing PasswordHasher with algorithm: {}",
@@ -56,7 +54,9 @@ object PasswordHasher {
             )
 
             "PBKDF2" -> PBKDF2Function.getInstance(
-                Hmac.valueOf(parameters.hmacAlgorithm.uppercase().trim()),
+                Hmac.valueOf(
+                    parameters.hmacAlgorithm.uppercase().trim()
+                ),
                 parameters.iterations,
                 parameters.outputLength
             )
@@ -70,6 +70,13 @@ object PasswordHasher {
     fun hash(password: String): String =
         Password.hash(password).with(hashingFunction).result
 
-    fun verify(password: String, hash: String): Boolean =
+    fun verify(password: String, hash: String): Boolean = try {
         Password.check(password, hash).with(hashingFunction)
+    } catch (e: Exception) {
+        logger.warn(
+            "Password verification failed due to hash issue: {}",
+            e.message
+        )
+        false
+    }
 }

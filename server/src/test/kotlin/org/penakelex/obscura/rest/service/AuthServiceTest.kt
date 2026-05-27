@@ -58,13 +58,11 @@ class AuthServiceTest {
         testApplication {
             val client = setupTestApp()
 
-            // Первая регистрация
             client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
                 setBody(RegisterRequest("dup@example.com", "SecurePass123"))
             }
 
-            // Вторая регистрация с тем же email
             val response = client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
                 setBody(RegisterRequest("dup@example.com", "SecurePass123"))
@@ -135,7 +133,7 @@ class AuthServiceTest {
             val body = response.body<LoginResponse>()
             assertTrue(body.token.isNotEmpty())
             assertTrue(body.userId.isNotEmpty())
-            assertTrue(body.expiresAt.isNotEmpty())
+            assertTrue(body.expiresAt > 0)
         }
     }
 

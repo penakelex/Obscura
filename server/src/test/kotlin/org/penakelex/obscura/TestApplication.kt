@@ -8,14 +8,25 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.penakelex.obscura.config.ServerConfig
 import org.penakelex.obscura.db.tables.Notes
 import org.penakelex.obscura.db.tables.Sessions
 import org.penakelex.obscura.db.tables.Users
+import org.testcontainers.containers.PostgreSQLContainer
+
+private val postgres = PostgreSQLContainer("postgres:16-alpine").apply {
+    withDatabaseName("obscura_test")
+    withUsername("test")
+    withPassword("test")
+    start()
+}
 
 fun ApplicationTestBuilder.setupTestApp(): HttpClient {
     Database.connect(
-        url = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=USER",
-        driver = "org.h2.Driver"
+        url = postgres.jdbcUrl,
+        driver = "org.postgresql.Driver",
+        user = postgres.username,
+        password = postgres.password
     )
 
     transaction {
@@ -23,7 +34,7 @@ fun ApplicationTestBuilder.setupTestApp(): HttpClient {
     }
 
     application {
-        module()
+        module(ServerConfig())
     }
 
     return createClient {
@@ -38,10 +49,6 @@ fun ApplicationTestBuilder.setupTestApp(): HttpClient {
 
 fun cleanupDatabase() {
     transaction {
-        exec("SET REFERENTIAL_INTEGRITY FALSE")
-        exec("TRUNCATE TABLE notes")
-        exec("TRUNCATE TABLE sessions")
-        exec("TRUNCATE TABLE users")
-        exec("SET REFERENTIAL_INTEGRITY TRUE")
+        exec("TRUNCATE TABLE notes, sessions, users RESTART IDENTITY CASCADE")
     }
 }

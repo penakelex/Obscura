@@ -1,8 +1,9 @@
 package org.penakelex.obscura.config
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
-object ServerConfig {
+class ServerConfig(root: Config = ConfigFactory.load()) {
     val database: Database
     val security: Security
     val validation: Validation
@@ -10,90 +11,84 @@ object ServerConfig {
     val jobs: Jobs
 
     init {
-        try {
-            val root = ConfigFactory.load().getConfig("obscura")
+        val obscura = root.getConfig("obscura")
 
-            val db = root.getConfig("database")
-            database = Database(
-                url =
-                    if (db.hasPath("url")) db.getString("url")
-                    else null,
-                driver = db.getString("driver"),
-                user =
-                    if (db.hasPath("user")) db.getString("user")
-                    else null,
-                password =
-                    if (db.hasPath("password")) db.getString("password")
-                    else null,
-                autoMigrate = db.getBoolean("auto-migrate"),
-                poolSize = db.getInt("pool-size"),
-                connectionTimeoutSeconds = db
-                    .getInt("connection-timeout-seconds"),
-                maxLifetimeSeconds = db.getInt("max-lifetime-seconds"),
-                logSql = db.getBoolean("log-sql")
-            )
+        val db = obscura.getConfig("database")
+        database = Database(
+            url =
+                if (db.hasPath("url")) db.getString("url")
+                else null,
+            driver = db.getString("driver"),
+            user =
+                if (db.hasPath("user")) db.getString("user")
+                else null,
+            password =
+                if (db.hasPath("password")) db.getString("password")
+                else null,
+            autoMigrate = db.getBoolean("auto-migrate"),
+            poolSize = db.getInt("pool-size"),
+            connectionTimeoutSeconds = db
+                .getInt("connection-timeout-seconds"),
+            maxLifetimeSeconds = db.getInt("max-lifetime-seconds"),
+            logSql = db.getBoolean("log-sql")
+        )
 
-            val securityConfig = root.getConfig("security")
-            val session = securityConfig.getConfig("session")
-            val password = securityConfig.getConfig("password")
-            val hashParameters = password.getConfig("hash-parameters")
+        val securityConfig = obscura.getConfig("security")
+        val session = securityConfig.getConfig("session")
+        val password = securityConfig.getConfig("password")
+        val hashParameters = password.getConfig("hash-parameters")
 
-            security = Security(
-                session = Security.Session(
-                    tokenLengthBytes = session.getInt("token-length-bytes"),
-                    expirationDays = session.getLong("expiration-days"),
-                    hashAlgorithm = session.getString("hash-algorithm")
-                ),
-                password = Security.Password(
-                    hashLength = password.getInt("hash-length"),
-                    algorithm = password.getString("algorithm"),
-                    hashParameters = Security.Password.HashParams(
-                        iterations = hashParameters.getInt("iterations"),
-                        memory = hashParameters.getInt("memory"),
-                        parallelism = hashParameters.getInt("parallelism"),
-                        outputLength = hashParameters
-                            .getInt("output-length"),
-                        logRounds = hashParameters.getInt("log-rounds"),
-                        workFactor = hashParameters.getInt("work-factor"),
-                        resources = hashParameters.getInt("resources"),
-                        hmacAlgorithm = hashParameters
-                            .getString("hmac-algorithm")
-                    )
-                ),
-                defaultCipherType = securityConfig.getConfig("cipher")
-                    .getInt("default-type")
-            )
+        security = Security(
+            session = Security.Session(
+                tokenLengthBytes = session.getInt("token-length-bytes"),
+                expirationDays = session.getLong("expiration-days"),
+                hashAlgorithm = session.getString("hash-algorithm")
+            ),
+            password = Security.Password(
+                hashLength = password.getInt("hash-length"),
+                algorithm = password.getString("algorithm"),
+                hashParameters = Security.Password.HashParams(
+                    iterations = hashParameters.getInt("iterations"),
+                    memory = hashParameters.getInt("memory"),
+                    parallelism = hashParameters.getInt("parallelism"),
+                    outputLength = hashParameters
+                        .getInt("output-length"),
+                    logRounds = hashParameters.getInt("log-rounds"),
+                    workFactor = hashParameters.getInt("work-factor"),
+                    resources = hashParameters.getInt("resources"),
+                    hmacAlgorithm = hashParameters
+                        .getString("hmac-algorithm")
+                )
+            ),
+            defaultCipherType = securityConfig.getConfig("cipher")
+                .getInt("default-type")
+        )
 
-            val validationConfig = root.getConfig("validation")
-            validation = Validation(
-                emailMaxLength = validationConfig
-                    .getInt("email.max-length"),
-                passwordMinLength = validationConfig
-                    .getInt("password.min-length"),
-                passwordMaxLength = validationConfig
-                    .getInt("password.max-length"),
-                deviceInfoMaxLength = validationConfig
-                    .getInt("device-info.max-length")
-            )
+        val validationConfig = obscura.getConfig("validation")
+        validation = Validation(
+            emailMaxLength = validationConfig
+                .getInt("email.max-length"),
+            passwordMinLength = validationConfig
+                .getInt("password.min-length"),
+            passwordMaxLength = validationConfig
+                .getInt("password.max-length"),
+            deviceInfoMaxLength = validationConfig
+                .getInt("device-info.max-length")
+        )
 
-            val networkConfig = root.getConfig("server")
-            network = Network(
-                host = networkConfig.getString("host"),
-                port = networkConfig.getInt("port"),
-                grpcPort = networkConfig.getInt("grpc-port")
-            )
+        val networkConfig = obscura.getConfig("server")
+        network = Network(
+            host = networkConfig.getString("host"),
+            port = networkConfig.getInt("port"),
+            grpcPort = networkConfig.getInt("grpc-port")
+        )
 
-            val jobsConfig = root.getConfig("jobs")
-            jobs = Jobs(
-                enabled = jobsConfig.getBoolean("enabled"),
-                sessionCleanupIntervalHours = jobsConfig
-                    .getInt("session-cleanup-interval-hours")
-            )
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            throw e
-        }
+        val jobsConfig = obscura.getConfig("jobs")
+        jobs = Jobs(
+            enabled = jobsConfig.getBoolean("enabled"),
+            sessionCleanupIntervalHours = jobsConfig
+                .getInt("session-cleanup-interval-hours")
+        )
     }
 
     data class Database(

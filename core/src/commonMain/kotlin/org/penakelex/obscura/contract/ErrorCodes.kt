@@ -18,6 +18,10 @@ object ErrorCodes {
         const val PASSWORD_TOO_LONG = "VALIDATION_PASSWORD_TOO_LONG"
         const val DEVICE_INFO_TOO_LONG =
             "VALIDATION_DEVICE_INFO_TOO_LONG"
+        const val CANNOT_REVOKE_CURRENT_SESSION =
+            "VALIDATION_CANNOT_REVOKE_CURRENT_SESSION"
+        const val SESSION_ID_REQUIRED =
+            "VALIDATION_SESSION_ID_REQUIRED"
         const val MULTIPLE_FIELDS_INVALID =
             "VALIDATION_MULTIPLE_FIELDS_INVALID"
     }
@@ -25,6 +29,7 @@ object ErrorCodes {
     object Resources {
         const val USER_NOT_FOUND = "RES_USER_NOT_FOUND"
         const val NOTE_NOT_FOUND = "RES_NOTE_NOT_FOUND"
+        const val SESSION_NOT_FOUND = "RES_SESSION_NOT_FOUND"
     }
 
     object Sync {
@@ -34,9 +39,12 @@ object ErrorCodes {
     }
 
     object Account {
-        const val INVALID_CURRENT_PASSWORD = "ACCOUNT_INVALID_CURRENT_PASSWORD"
-        const val NEW_EMAIL_ALREADY_TAKEN = "ACCOUNT_NEW_EMAIL_ALREADY_TAKEN"
-        const val PASSWORD_SAME_AS_CURRENT = "ACCOUNT_PASSWORD_SAME_AS_CURRENT"
+        const val INVALID_CURRENT_PASSWORD =
+            "ACCOUNT_INVALID_CURRENT_PASSWORD"
+        const val NEW_EMAIL_ALREADY_TAKEN =
+            "ACCOUNT_NEW_EMAIL_ALREADY_TAKEN"
+        const val PASSWORD_SAME_AS_CURRENT =
+            "ACCOUNT_PASSWORD_SAME_AS_CURRENT"
     }
 
     object System {

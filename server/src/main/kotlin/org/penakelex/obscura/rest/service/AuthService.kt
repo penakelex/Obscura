@@ -14,21 +14,29 @@ import org.penakelex.obscura.exception.validation.ValidationException
 import org.penakelex.obscura.contract.ErrorCodes
 import org.penakelex.obscura.contract.rest.requests.account.ChangeEmailRequest
 import org.penakelex.obscura.contract.rest.requests.account.ChangePasswordRequest
+import org.penakelex.obscura.contract.rest.requests.account.DeleteAccountRequest
+import org.penakelex.obscura.contract.rest.responses.auth.SessionInfo
+import org.penakelex.obscura.contract.rest.responses.auth.SessionsListResponse
 import org.penakelex.obscura.contract.rest.responses.common.FieldError
+import org.penakelex.obscura.db.repository.NoteRepository
 import org.penakelex.obscura.exception.account.AccountException
 import org.penakelex.obscura.security.PasswordHasher
+import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class AuthService(
     private val userRepository: UserRepository,
-    private val sessionRepository: SessionRepository
+    private val sessionRepository: SessionRepository,
+    private val noteRepository: NoteRepository,
+    private val passwordHasher: PasswordHasher,
+    private val validationConfig: ServerConfig.Validation
 ) {
     suspend fun register(request: RegisterRequest): SuccessResponse {
         validateRegisterInput(request.email, request.password)
 
-        val hash = PasswordHasher.hash(request.password)
+        val hash = passwordHasher.hash(request.password)
         val userId = userRepository.create(request.email, hash)
             ?: throw AuthException.EmailAlreadyRegistered(request.email)
 
@@ -45,7 +53,7 @@ class AuthService(
         val user = userRepository.findByEmail(request.email)
             ?: throw AuthException.InvalidCredentials()
 
-        if (!PasswordHasher.verify(
+        if (!passwordHasher.verify(
                 request.password,
                 user.passwordHash
             )
@@ -57,9 +65,49 @@ class AuthService(
             sessionRepository.create(user.id, request.deviceInfo)
         return LoginResponse(
             token = sessionResult.rawToken,
-            expiresAt = sessionResult.expiresAt.toString(),
+            expiresAt = sessionResult.expiresAt.toEpochMilliseconds(),
             userId = user.id.toString()
         )
+    }
+
+    suspend fun listSessions(
+        userId: Uuid,
+        currentSessionId: Uuid
+    ): SessionsListResponse {
+        val sessions = sessionRepository.findAllActiveByUserId(userId)
+            .filter { it.expiresAt > Clock.System.now() }
+            .map { session ->
+                SessionInfo(
+                    id = session.id.toString(),
+                    deviceInfo = session.deviceInfo,
+                    createdAt = session.createdAt.toEpochMilliseconds(),
+                    expiresAt = session.expiresAt.toEpochMilliseconds(),
+                    isCurrent = session.id == currentSessionId
+                )
+            }
+            .sortedByDescending { it.createdAt }
+
+        return SessionsListResponse(
+            sessions = sessions,
+            totalCount = sessions.size
+        )
+    }
+
+    suspend fun revokeSessionById(
+        userId: Uuid,
+        sessionId: Uuid,
+        currentSessionId: Uuid
+    ): SuccessResponse {
+        if (sessionId == currentSessionId) {
+            throw ValidationException.CannotRevokeCurrentSession()
+        }
+
+        val session = sessionRepository
+            .findActiveByIdAndUser(sessionId, userId)
+            ?: throw NotFoundException.SessionNotFound(sessionId.toString())
+
+        sessionRepository.revoke(session.id)
+        return SuccessResponse("Session revoked")
     }
 
     suspend fun logout(sessionId: Uuid): SuccessResponse {
@@ -89,7 +137,7 @@ class AuthService(
         val user = userRepository.findById(userId)
             ?: throw NotFoundException.UserNotFound(userId.toString())
 
-        if (!PasswordHasher.verify(
+        if (!passwordHasher.verify(
                 request.currentPassword,
                 user.passwordHash
             )
@@ -101,12 +149,34 @@ class AuthService(
             throw AccountException.PasswordSameAsCurrent()
         }
 
-        val newHash = PasswordHasher.hash(request.newPassword)
+        val newHash = passwordHasher.hash(request.newPassword)
         userRepository.updatePassword(userId, newHash)
 
         sessionRepository.revokeAllByUserId(userId)
 
         return SuccessResponse("Password changed successfully")
+    }
+
+    suspend fun deleteAccount(
+        userId: Uuid,
+        request: DeleteAccountRequest
+    ): SuccessResponse {
+        val user = userRepository.findById(userId)
+            ?: throw NotFoundException.UserNotFound(userId.toString())
+
+        if (!passwordHasher.verify(
+                request.currentPassword,
+                user.passwordHash
+            )
+        ) {
+            throw AccountException.InvalidCurrentPassword()
+        }
+
+        sessionRepository.deleteAllByUserId(userId)
+        noteRepository.deleteAllByUserId(userId)
+        userRepository.delete(userId)
+
+        return SuccessResponse("Account and all associated data deleted")
     }
 
     suspend fun changeEmail(
@@ -118,7 +188,7 @@ class AuthService(
         val user = userRepository.findById(userId)
             ?: throw NotFoundException.UserNotFound(userId.toString())
 
-        if (!PasswordHasher.verify(
+        if (!passwordHasher.verify(
                 request.currentPassword,
                 user.passwordHash
             )
@@ -146,7 +216,6 @@ class AuthService(
         password: String
     ) {
         val errors = mutableListOf<FieldError>()
-        val validation = ServerConfig.validation
 
         when {
             email.isBlank() -> errors += FieldError(
@@ -155,11 +224,11 @@ class AuthService(
                 "Email is required"
             )
 
-            email.length > validation.emailMaxLength ->
+            email.length > validationConfig.emailMaxLength ->
                 errors += FieldError(
                     "email",
                     ErrorCodes.Validation.EMAIL_TOO_LONG,
-                    "Max ${validation.emailMaxLength} characters"
+                    "Max ${validationConfig.emailMaxLength} characters"
                 )
 
             !EMAIL_REGEX.matches(email) -> errors += FieldError(
@@ -170,18 +239,18 @@ class AuthService(
         }
 
         when {
-            password.length < validation.passwordMinLength ->
+            password.length < validationConfig.passwordMinLength ->
                 errors += FieldError(
                     "password",
                     ErrorCodes.Validation.PASSWORD_TOO_SHORT,
-                    "Min ${validation.passwordMinLength} characters"
+                    "Min ${validationConfig.passwordMinLength} characters"
                 )
 
-            password.length > validation.passwordMaxLength ->
+            password.length > validationConfig.passwordMaxLength ->
                 errors += FieldError(
                     "password",
                     ErrorCodes.Validation.PASSWORD_TOO_LONG,
-                    "Max ${validation.passwordMaxLength} characters"
+                    "Max ${validationConfig.passwordMaxLength} characters"
                 )
         }
 
@@ -196,7 +265,6 @@ class AuthService(
         deviceInfo: String?
     ) {
         val errors = mutableListOf<FieldError>()
-        val validation = ServerConfig.validation
 
         if (email.isBlank()) {
             errors += FieldError(
@@ -212,21 +280,21 @@ class AuthService(
             )
         }
 
-        if (password.length < validation.passwordMinLength) {
+        if (password.length < validationConfig.passwordMinLength) {
             errors += FieldError(
                 "password",
                 ErrorCodes.Validation.PASSWORD_TOO_SHORT,
-                "Min ${validation.passwordMinLength} characters"
+                "Min ${validationConfig.passwordMinLength} characters"
             )
         }
 
         if (deviceInfo != null && deviceInfo.length >
-            validation.deviceInfoMaxLength
+            validationConfig.deviceInfoMaxLength
         ) {
             errors += FieldError(
                 "deviceInfo",
                 ErrorCodes.Validation.DEVICE_INFO_TOO_LONG,
-                "Max ${validation.deviceInfoMaxLength} characters"
+                "Max ${validationConfig.deviceInfoMaxLength} characters"
             )
         }
 
@@ -236,13 +304,11 @@ class AuthService(
     }
 
     private fun validateEmail(email: String) {
-        val validation = ServerConfig.validation
-
         when {
             email.isBlank() -> throw ValidationException.EmailBlank()
-            email.length > validation.emailMaxLength ->
+            email.length > validationConfig.emailMaxLength ->
                 throw ValidationException.EmailTooLong(
-                    validation.emailMaxLength
+                    validationConfig.emailMaxLength
                 )
 
             !EMAIL_REGEX.matches(email) ->
@@ -251,17 +317,15 @@ class AuthService(
     }
 
     private fun validatePassword(password: String) {
-        val validation = ServerConfig.validation
-
         when {
-            password.length < validation.passwordMinLength ->
+            password.length < validationConfig.passwordMinLength ->
                 throw ValidationException.PasswordTooShort(
-                    validation.passwordMinLength
+                    validationConfig.passwordMinLength
                 )
 
-            password.length > validation.passwordMaxLength ->
+            password.length > validationConfig.passwordMaxLength ->
                 throw ValidationException.PasswordTooLong(
-                    validation.passwordMaxLength
+                    validationConfig.passwordMaxLength
                 )
         }
     }

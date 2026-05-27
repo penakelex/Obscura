@@ -13,6 +13,11 @@ sealed class NotFoundException(
         message = "User with id '$userId' not found"
     )
 
+    class SessionNotFound(sessionId: String) : NotFoundException(
+        errorCode = ErrorCodes.Resources.SESSION_NOT_FOUND,
+        message = "Session with id '$sessionId' not found"
+    )
+
     class NoteNotFound(noteId: String) : NotFoundException(
         errorCode = ErrorCodes.Resources.NOTE_NOT_FOUND,
         message = "Note with id '$noteId' not found"

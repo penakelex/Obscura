@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.ktor)
-    kotlin("plugin.serialization") version "2.1.0"
+    alias(libs.plugins.kotlin.serialization)
 }
 
 group = "org.penakelex.obscura"
@@ -43,12 +43,17 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
 
+    implementation(libs.koin.ktor)
+    implementation(libs.koin.logger.slf4j)
+
     implementation(libs.password4j)
 
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.ktor.client.content.negotiation)
 
-    testImplementation(libs.h2)
+    testImplementation(libs.testcontainers)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.junit.jupiter)
 
     testImplementation(libs.kotlin.testJunit)
     testImplementation(libs.kotlinx.coroutines.test)
