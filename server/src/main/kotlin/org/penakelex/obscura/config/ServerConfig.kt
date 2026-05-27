@@ -5,64 +5,102 @@ import com.typesafe.config.ConfigFactory
 object ServerConfig {
     val database: Database
     val security: Security
+    val validation: Validation
     val network: Network
     val jobs: Jobs
 
     init {
-        val root = ConfigFactory.load().getConfig("obscura")
+        try {
+            val root = ConfigFactory.load().getConfig("obscura")
 
-        val db = root.getConfig("database")
-        database = Database(
-            url = db.getString("url"),
-            driver = db.getString("driver"),
-            user = db.getString("user"),
-            password = db.getString("password"),
-            autoMigrate = db.getBoolean("auto-migrate"),
-            poolSize = db.getInt("pool-size"),
-            connectionTimeoutSeconds = db.getInt("connection-timeout-seconds"),
-            maxLifetimeSeconds = db.getInt("max-lifetime-seconds"),
-            logSql = db.getBoolean("log-sql")
-        )
+            val db = root.getConfig("database")
+            database = Database(
+                url =
+                    if (db.hasPath("url")) db.getString("url")
+                    else null,
+                driver = db.getString("driver"),
+                user =
+                    if (db.hasPath("user")) db.getString("user")
+                    else null,
+                password =
+                    if (db.hasPath("password")) db.getString("password")
+                    else null,
+                autoMigrate = db.getBoolean("auto-migrate"),
+                poolSize = db.getInt("pool-size"),
+                connectionTimeoutSeconds = db
+                    .getInt("connection-timeout-seconds"),
+                maxLifetimeSeconds = db.getInt("max-lifetime-seconds"),
+                logSql = db.getBoolean("log-sql")
+            )
 
-        val sec = root.getConfig("security")
-        security = Security(
-            session = Security.Session(
-                tokenLengthBytes = sec.getConfig("session")
-                    .getInt("token-length-bytes"),
-                expirationDays = sec.getConfig("session")
-                    .getLong("expiration-days"),
-                hashAlgorithm = sec.getConfig("session")
-                    .getString("hash-algorithm")
-            ),
-            password = Security.Password(
-                hashLength = sec.getConfig("password")
-                    .getInt("hash-length"),
-                algorithm = sec.getConfig("password")
-                    .getString("algorithm")
-            ),
-            defaultCipherType = sec.getConfig("cipher")
-                .getInt("default-type")
-        )
+            val securityConfig = root.getConfig("security")
+            val session = securityConfig.getConfig("session")
+            val password = securityConfig.getConfig("password")
+            val hashParameters = password.getConfig("hash-parameters")
 
-        val net = root.getConfig("server")
-        network = Network(
-            host = net.getString("host"),
-            port = net.getInt("port"),
-            grpcPort = net.getInt("grpc-port")
-        )
+            security = Security(
+                session = Security.Session(
+                    tokenLengthBytes = session.getInt("token-length-bytes"),
+                    expirationDays = session.getLong("expiration-days"),
+                    hashAlgorithm = session.getString("hash-algorithm")
+                ),
+                password = Security.Password(
+                    hashLength = password.getInt("hash-length"),
+                    algorithm = password.getString("algorithm"),
+                    hashParameters = Security.Password.HashParams(
+                        iterations = hashParameters.getInt("iterations"),
+                        memory = hashParameters.getInt("memory"),
+                        parallelism = hashParameters.getInt("parallelism"),
+                        outputLength = hashParameters
+                            .getInt("output-length"),
+                        logRounds = hashParameters.getInt("log-rounds"),
+                        workFactor = hashParameters.getInt("work-factor"),
+                        resources = hashParameters.getInt("resources"),
+                        hmacAlgorithm = hashParameters
+                            .getString("hmac-algorithm")
+                    )
+                ),
+                defaultCipherType = securityConfig.getConfig("cipher")
+                    .getInt("default-type")
+            )
 
-        val jobsCfg = root.getConfig("jobs")
-        jobs = Jobs(
-            enabled = jobsCfg.getBoolean("enabled"),
-            sessionCleanupIntervalHours = jobsCfg.getInt("session-cleanup-interval-hours")
-        )
+            val validationConfig = root.getConfig("validation")
+            validation = Validation(
+                emailMaxLength = validationConfig
+                    .getInt("email.max-length"),
+                passwordMinLength = validationConfig
+                    .getInt("password.min-length"),
+                passwordMaxLength = validationConfig
+                    .getInt("password.max-length"),
+                deviceInfoMaxLength = validationConfig
+                    .getInt("device-info.max-length")
+            )
+
+            val networkConfig = root.getConfig("server")
+            network = Network(
+                host = networkConfig.getString("host"),
+                port = networkConfig.getInt("port"),
+                grpcPort = networkConfig.getInt("grpc-port")
+            )
+
+            val jobsConfig = root.getConfig("jobs")
+            jobs = Jobs(
+                enabled = jobsConfig.getBoolean("enabled"),
+                sessionCleanupIntervalHours = jobsConfig
+                    .getInt("session-cleanup-interval-hours")
+            )
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
     }
 
     data class Database(
-        val url: String,
+        val url: String?,
         val driver: String,
-        val user: String,
-        val password: String,
+        val user: String?,
+        val password: String?,
         val autoMigrate: Boolean,
         val poolSize: Int,
         val connectionTimeoutSeconds: Int,
@@ -83,9 +121,28 @@ object ServerConfig {
 
         data class Password(
             val hashLength: Int,
-            val algorithm: String
-        )
+            val algorithm: String,
+            val hashParameters: HashParams
+        ) {
+            data class HashParams(
+                val iterations: Int,
+                val memory: Int,
+                val parallelism: Int,
+                val outputLength: Int,
+                val logRounds: Int,
+                val workFactor: Int,
+                val resources: Int,
+                val hmacAlgorithm: String
+            )
+        }
     }
+
+    data class Validation(
+        val emailMaxLength: Int,
+        val passwordMinLength: Int,
+        val passwordMaxLength: Int,
+        val deviceInfoMaxLength: Int
+    )
 
     data class Network(
         val host: String,

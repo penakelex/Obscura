@@ -7,11 +7,12 @@ import org.jetbrains.exposed.v1.core.Slf4jSqlDebugLogger
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.penakelex.obscura.config.ServerConfig
 import org.slf4j.LoggerFactory
+import kotlin.time.Clock
 
 object DatabaseManager {
     private val logger =
         LoggerFactory.getLogger(DatabaseManager::class.java)
-
+    private val startedAt = Clock.System.now()
     private var dataSource: HikariDataSource? = null
 
     fun init(): Database {
@@ -27,7 +28,6 @@ object DatabaseManager {
                 ServerConfig.database.maxLifetimeSeconds * 1000L
             isAutoCommit = false
             transactionIsolation = "TRANSACTION_REPEATABLE_READ"
-            connectionTestQuery = "SELECT 1"
             validationTimeout = 5000
         }
 
@@ -35,10 +35,7 @@ object DatabaseManager {
         dataSource = ds
 
         val databaseConfig = if (ServerConfig.database.logSql) {
-            logger.info(
-                "SQL logging is ENABLED " +
-                        "— all queries will be logged via SLF4J"
-            )
+            logger.info("SQL logging is ENABLED — all queries will be logged via SLF4J")
             DatabaseConfig { sqlLogger = Slf4jSqlDebugLogger }
         } else {
             DatabaseConfig { sqlLogger = null }
@@ -46,6 +43,24 @@ object DatabaseManager {
 
         return Database.connect(ds, databaseConfig = databaseConfig)
     }
+
+    fun isHealthy(): Boolean {
+        val ds = dataSource ?: return false
+
+        if (ds.isClosed) {
+            return false
+        }
+
+        return try {
+            ds.connection.use { connection -> connection.isValid(2) }
+        } catch (e: Exception) {
+            logger.warn("Health check failed: {}", e.message)
+            false
+        }
+    }
+
+    fun uptimeSeconds(): Long =
+        (Clock.System.now() - startedAt).inWholeSeconds
 
     fun close() {
         dataSource?.let { ds ->

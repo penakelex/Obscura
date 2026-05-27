@@ -7,5 +7,6 @@ import kotlin.uuid.Uuid
 data class Session @OptIn(ExperimentalUuidApi::class) constructor(
     val id: Uuid,
     val userId: Uuid,
-    val expiresAt: Instant
+    val expiresAt: Instant,
+    val isActive: Boolean,
 )
