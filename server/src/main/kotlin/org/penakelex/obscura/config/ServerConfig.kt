@@ -37,6 +37,7 @@ class ServerConfig(root: Config = ConfigFactory.load()) {
         val session = securityConfig.getConfig("session")
         val password = securityConfig.getConfig("password")
         val hashParameters = password.getConfig("hash-parameters")
+        val rateLimit = securityConfig.getConfig("rate-limit")
 
         security = Security(
             session = Security.Session(
@@ -60,8 +61,10 @@ class ServerConfig(root: Config = ConfigFactory.load()) {
                         .getString("hmac-algorithm")
                 )
             ),
-            defaultCipherType = securityConfig.getConfig("cipher")
-                .getInt("default-type")
+            rateLimit = Security.RateLimit(
+                maxRequests = rateLimit.getInt("max-requests"),
+                windowMinutes = rateLimit.getInt("window-minutes"),
+            ),
         )
 
         val validationConfig = obscura.getConfig("validation")
@@ -87,7 +90,11 @@ class ServerConfig(root: Config = ConfigFactory.load()) {
         jobs = Jobs(
             enabled = jobsConfig.getBoolean("enabled"),
             sessionCleanupIntervalHours = jobsConfig
-                .getInt("session-cleanup-interval-hours")
+                .getInt("session-cleanup-interval-hours"),
+            notesCleanupIntervalHours = jobsConfig
+                .getInt("notes-cleanup-interval-hours"),
+            notesRetentionDays = jobsConfig
+                .getInt("notes-retention-days")
         )
     }
 
@@ -106,7 +113,7 @@ class ServerConfig(root: Config = ConfigFactory.load()) {
     data class Security(
         val session: Session,
         val password: Password,
-        val defaultCipherType: Int
+        val rateLimit: RateLimit,
     ) {
         data class Session(
             val tokenLengthBytes: Int,
@@ -130,6 +137,11 @@ class ServerConfig(root: Config = ConfigFactory.load()) {
                 val hmacAlgorithm: String
             )
         }
+
+        data class RateLimit(
+            val maxRequests: Int,
+            val windowMinutes: Int
+        )
     }
 
     data class Validation(
@@ -147,6 +159,8 @@ class ServerConfig(root: Config = ConfigFactory.load()) {
 
     data class Jobs(
         val enabled: Boolean,
-        val sessionCleanupIntervalHours: Int
+        val sessionCleanupIntervalHours: Int,
+        val notesCleanupIntervalHours: Int,
+        val notesRetentionDays: Int
     )
 }

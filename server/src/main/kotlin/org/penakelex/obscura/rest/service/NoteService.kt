@@ -96,14 +96,7 @@ class NoteService(
     }
 
     private suspend fun countUserNotes(userId: Uuid): Int =
-        noteRepository
-            .findAllByUserId(
-                userId,
-                limit = 1,
-                offset = 0,
-                includeDeleted = true,
-            )
-            .totalCount
+        noteRepository.countByUserId(userId, includeDeleted = true)
 
     private fun parseUuidOrThrow(value: String): Uuid =
         Uuid.parseOrNull(value)

@@ -39,7 +39,9 @@ dependencies {
     implementation(libs.grpc.kotlin.stub)
     implementation(libs.grpc.stub)
     implementation(libs.grpc.netty.shaded)
+    implementation(libs.grpc.services)
     implementation(libs.protobuf.kotlin)
+    implementation(libs.javax.annotation.api)
 
     implementation(libs.kotlinx.serialization.json)
 
@@ -50,6 +52,10 @@ dependencies {
 
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.ktor.client.content.negotiation)
+
+    testImplementation(libs.grpc.testing)
+    testImplementation(libs.grpc.inprocess)
+    testImplementation(libs.mockk)
 
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.postgresql)

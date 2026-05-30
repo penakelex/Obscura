@@ -22,6 +22,7 @@ object ErrorCodes {
             "VALIDATION_CANNOT_REVOKE_CURRENT_SESSION"
         const val SESSION_ID_REQUIRED =
             "VALIDATION_SESSION_ID_REQUIRED"
+        const val PAYLOAD_TOO_LARGE = "VALIDATION_PAYLOAD_TOO_LARGE"
         const val MULTIPLE_FIELDS_INVALID =
             "VALIDATION_MULTIPLE_FIELDS_INVALID"
     }
@@ -30,12 +31,6 @@ object ErrorCodes {
         const val USER_NOT_FOUND = "RES_USER_NOT_FOUND"
         const val NOTE_NOT_FOUND = "RES_NOTE_NOT_FOUND"
         const val SESSION_NOT_FOUND = "RES_SESSION_NOT_FOUND"
-    }
-
-    object Sync {
-        const val CONFLICT_RESOLVED = "SYNC_CONFLICT_RESOLVED"
-        const val QUOTA_EXCEEDED = "SYNC_QUOTA_EXCEEDED"
-        const val PAYLOAD_TOO_LARGE = "SYNC_PAYLOAD_TOO_LARGE"
     }
 
     object Account {
@@ -49,5 +44,6 @@ object ErrorCodes {
 
     object System {
         const val INTERNAL_ERROR = "SYS_INTERNAL_ERROR"
+        const val RATE_LIMIT_EXCEEDED = "SYS_RATE_LIMIT_EXCEEDED"
     }
 }

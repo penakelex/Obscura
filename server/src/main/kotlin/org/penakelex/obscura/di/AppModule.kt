@@ -5,21 +5,55 @@ import org.penakelex.obscura.config.ServerConfig
 import org.penakelex.obscura.db.repository.NoteRepository
 import org.penakelex.obscura.db.repository.SessionRepository
 import org.penakelex.obscura.db.repository.UserRepository
+import org.penakelex.obscura.jobs.NotesCleanupJob
 import org.penakelex.obscura.jobs.SessionCleanupJob
 import org.penakelex.obscura.rest.service.AuthService
 import org.penakelex.obscura.rest.service.NoteService
 import org.penakelex.obscura.security.PasswordHasher
+import org.penakelex.obscura.security.ratelimit.InMemoryRateLimiter
+import org.penakelex.obscura.security.ratelimit.RateLimitConfig
+import kotlin.time.Duration.Companion.minutes
 
 fun appModule(serverConfig: ServerConfig) = module {
     single { serverConfig }
 
-    single { PasswordHasher(serverConfig.security.password) }
+    single {
+        PasswordHasher(
+            passwordConfig = serverConfig.security.password,
+        )
+    }
 
     single { UserRepository() }
-    single { SessionRepository(serverConfig.security.session) }
-    single { NoteRepository(serverConfig.security) }
+    single {
+        SessionRepository(
+            sessionConfig = serverConfig.security.session,
+        )
+    }
+    single { NoteRepository() }
 
-    single { SessionCleanupJob(serverConfig.jobs, get()) }
+    single {
+        SessionCleanupJob(
+            jobsConfig = serverConfig.jobs,
+            sessionRepository = get(),
+        )
+    }
+    single {
+        NotesCleanupJob(
+            jobsConfig = serverConfig.jobs,
+            noteRepository = get(),
+        )
+    }
+
+    single {
+        InMemoryRateLimiter(
+            RateLimitConfig(
+                maxRequests = serverConfig
+                    .security.rateLimit.maxRequests,
+                window = serverConfig
+                    .security.rateLimit.windowMinutes.minutes,
+            )
+        )
+    }
 
     single {
         AuthService(
@@ -31,9 +65,5 @@ fun appModule(serverConfig: ServerConfig) = module {
         )
     }
 
-    single {
-        NoteService(
-            noteRepository = get(),
-        )
-    }
+    single { NoteService(noteRepository = get()) }
 }

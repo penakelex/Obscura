@@ -1,0 +1,14 @@
+syntax = "proto3";
+package org.penakelex.obscura.proto;
+
+option java_package = "org.penakelex.obscura.proto";
+option java_multiple_files = true;
+
+service TestService {
+  rpc Ping (TestPingRequest) returns (TestPingResponse);
+}
+
+message TestPingRequest {}
+message TestPingResponse {
+  string user_id = 1;
+}

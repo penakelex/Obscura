@@ -27,7 +27,7 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class SessionRepository(
-    private val config: ServerConfig.Security.Session
+    private val sessionConfig: ServerConfig.Security.Session
 ) {
     data class SessionCreationResult(
         val rawToken: String,
@@ -38,10 +38,10 @@ class SessionRepository(
         userId: Uuid,
         deviceInfo: String?
     ): SessionCreationResult = withContext(Dispatchers.IO) {
-        val rawToken = generateSecureToken(config.tokenLengthBytes)
+        val rawToken = generateSecureToken(sessionConfig.tokenLengthBytes)
         val tokenHash = hashToken(rawToken)
         val now = Clock.System.now()
-        val expiresAt = now + config.expirationDays.days
+        val expiresAt = now + sessionConfig.expirationDays.days
 
         suspendTransaction {
             Sessions.insert {
@@ -159,7 +159,7 @@ class SessionRepository(
     }
 
     private fun hashToken(rawToken: String): String =
-        MessageDigest.getInstance(config.hashAlgorithm)
+        MessageDigest.getInstance(sessionConfig.hashAlgorithm)
             .digest(rawToken.toByteArray())
             .joinToString("") { "%02x".format(it) }
 }

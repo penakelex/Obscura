@@ -11,18 +11,21 @@ import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.hours
 
 class SessionCleanupJob(
-    private val config: ServerConfig.Jobs,
+    private val jobsConfig: ServerConfig.Jobs,
     private val sessionRepository: SessionRepository
 ) {
     private val logger =
         LoggerFactory.getLogger(SessionCleanupJob::class.java)
 
     fun start(scope: CoroutineScope): Job? {
-        if (!config.enabled) {
-            logger.info("Background jobs are disabled — SessionCleanupJob will not start")
+        if (!jobsConfig.enabled) {
+            logger.info(
+                "Background jobs are disabled — SessionCleanupJob will not start"
+            )
             return null
         }
-        val intervalHours = config.sessionCleanupIntervalHours
+
+        val intervalHours = jobsConfig.sessionCleanupIntervalHours
         logger.info(
             "Starting SessionCleanupJob with interval of {} hours",
             intervalHours

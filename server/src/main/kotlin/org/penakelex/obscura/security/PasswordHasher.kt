@@ -6,13 +6,13 @@ import com.password4j.types.Hmac
 import org.penakelex.obscura.config.ServerConfig
 import org.slf4j.LoggerFactory
 
-class PasswordHasher(private val config: ServerConfig.Security.Password) {
+class PasswordHasher(private val passwordConfig: ServerConfig.Security.Password) {
     private val logger =
         LoggerFactory.getLogger(PasswordHasher::class.java)
 
     private val hashingFunction: HashingFunction by lazy {
-        val algorithm = config.algorithm.uppercase().trim()
-        val parameters = config.hashParameters
+        val algorithm = passwordConfig.algorithm.uppercase().trim()
+        val parameters = passwordConfig.hashParameters
 
         logger.info(
             "Initializing PasswordHasher with algorithm: {}",

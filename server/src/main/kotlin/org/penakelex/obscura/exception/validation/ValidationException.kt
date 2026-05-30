@@ -94,6 +94,18 @@ sealed class ValidationException(
         )
     )
 
+    class PayloadTooLarge(maxSize: Int) : ValidationException(
+        errorCode = ErrorCodes.Validation.PAYLOAD_TOO_LARGE,
+        message = "Payload exceeds maximum size of $maxSize bytes",
+        fieldErrors = listOf(
+            FieldError(
+                "encryptedData",
+                ErrorCodes.Validation.PAYLOAD_TOO_LARGE,
+                "Max $maxSize bytes per note"
+            )
+        )
+    )
+
     class MultipleFields(errors: List<FieldError>) :
         ValidationException(
             errorCode = ErrorCodes.Validation.MULTIPLE_FIELDS_INVALID,
