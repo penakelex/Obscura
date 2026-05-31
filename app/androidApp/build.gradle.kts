@@ -18,6 +18,10 @@ dependencies {
     implementation(libs.androidx.activity.compose)
 
     implementation(libs.compose.ui.tooling.preview)
+
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+
     debugImplementation(libs.compose.ui.tooling)
 }
 
@@ -44,7 +48,7 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }

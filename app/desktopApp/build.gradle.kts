@@ -20,7 +20,11 @@ compose.desktop {
         mainClass = "org.penakelex.obscura.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(
+                TargetFormat.Dmg,
+                TargetFormat.Msi,
+                TargetFormat.Deb
+            )
             packageName = "org.penakelex.obscura"
             packageVersion = "1.0.0"
         }
