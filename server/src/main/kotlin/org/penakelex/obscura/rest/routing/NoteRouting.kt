@@ -7,6 +7,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import org.penakelex.obscura.config.ServerConfig
 import org.penakelex.obscura.contract.rest.requests.sync.SyncRequest
 import org.penakelex.obscura.exception.resource.NotFoundException
 import org.penakelex.obscura.rest.service.NoteService
@@ -14,13 +15,16 @@ import org.penakelex.obscura.security.authenticate
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
-fun Route.noteRouting(noteService: NoteService) {
+fun Route.noteRouting(
+    noteService: NoteService,
+    paginationConfig: ServerConfig.Validation
+) {
     route("/api/notes") {
         get {
             val session = call.authenticate()
             val limit = call.request.queryParameters["limit"]
                 ?.toIntOrNull()
-                ?: NoteService.DEFAULT_PAGE_SIZE
+                ?: paginationConfig.pagination.defaultPageSize
             val offset = call.request.queryParameters["offset"]
                 ?.toIntOrNull()
                 ?: 0

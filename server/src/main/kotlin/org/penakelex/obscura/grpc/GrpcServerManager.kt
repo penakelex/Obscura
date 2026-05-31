@@ -8,9 +8,10 @@ import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
 
 class GrpcServerManager(
-    private val networkConfig: ServerConfig.Network,
     private val syncService: NotesSyncService,
-    private val authInterceptor: GrpcAuthInterceptor
+    private val authInterceptor: GrpcAuthInterceptor,
+    private val networkConfig: ServerConfig.Network,
+    private val grpcServerSettings: ServerConfig.ServerSettings.Grpc,
 ) {
     private val logger =
         LoggerFactory.getLogger(GrpcServerManager::class.java)
@@ -39,8 +40,12 @@ class GrpcServerManager(
     fun stop() {
         server?.let {
             it.shutdown()
-            if (!it.awaitTermination(10, TimeUnit.SECONDS)) {
-                logger.warn("gRPC server did not terminate in 10s, forcing shutdown")
+            val timeout = grpcServerSettings.terminationTimeoutSeconds
+            if (!it.awaitTermination(timeout.toLong(), TimeUnit.SECONDS)) {
+                logger.warn(
+                    "gRPC server did not terminate in {}s, forcing shutdown",
+                    timeout
+                )
                 it.shutdownNow()
             }
             logger.info("gRPC server stopped gracefully")

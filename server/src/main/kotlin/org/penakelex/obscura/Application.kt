@@ -49,8 +49,10 @@ fun main() {
 
     Runtime.getRuntime().addShutdownHook(Thread {
         server.stop(
-            gracePeriodMillis = 5.seconds.inWholeMilliseconds,
-            timeoutMillis = 10.seconds.inWholeMilliseconds,
+            gracePeriodMillis = config.server.shutdown
+                .gracePeriodSeconds.seconds.inWholeMilliseconds,
+            timeoutMillis = config.server.shutdown
+                .timeoutSeconds.seconds.inWholeMilliseconds,
         )
         DatabaseManager.close()
     })
@@ -88,6 +90,6 @@ fun Application.module(serverConfig: ServerConfig) {
     routing {
         healthRouting()
         authRouting(authService)
-        noteRouting(noteService)
+        noteRouting(noteService, serverConfig.validation)
     }
 }

@@ -55,12 +55,6 @@ class NotesSyncServiceTest {
                 withPassword("test")
                 start()
             }
-
-        private val SESSION_CONFIG = ServerConfig.Security.Session(
-            tokenLengthBytes = 32,
-            expirationDays = 30,
-            hashAlgorithm = "SHA-256"
-        )
     }
 
     @get:Rule
@@ -92,8 +86,11 @@ class NotesSyncServiceTest {
             )
         }
 
-        sessionRepository = SessionRepository(SESSION_CONFIG)
-        noteRepository = NoteRepository()
+        val serverConfig = ServerConfig()
+
+        sessionRepository =
+            SessionRepository(serverConfig.security.session)
+        noteRepository = NoteRepository(serverConfig.validation)
 
         val session = kotlinx.coroutines.runBlocking {
             sessionRepository.create(testUserId, "test-device")
@@ -103,7 +100,8 @@ class NotesSyncServiceTest {
         val serverName = InProcessServerBuilder.generateName()
         val syncService = NotesSyncService(
             noteRepository = noteRepository,
-            sessionRepository = sessionRepository
+            sessionRepository = sessionRepository,
+            validationConfig = serverConfig.validation,
         )
         val authInterceptor = GrpcAuthInterceptor()
 

@@ -10,6 +10,7 @@ import org.penakelex.obscura.db.repository.NoteRepository
 import org.penakelex.obscura.exception.resource.NotFoundException
 import org.penakelex.obscura.proto.NoteProto
 import com.google.protobuf.ByteString
+import org.penakelex.obscura.config.ServerConfig
 import org.penakelex.obscura.contract.rest.requests.sync.NoteChange
 import java.util.Base64
 import kotlin.time.Clock
@@ -18,7 +19,8 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class NoteService(
-    private val noteRepository: NoteRepository
+    private val noteRepository: NoteRepository,
+    private val validationConfig: ServerConfig.Validation,
 ) {
     suspend fun listNotes(
         userId: Uuid,
@@ -26,7 +28,13 @@ class NoteService(
         offset: Int,
         includeDeleted: Boolean
     ): NotesListResponse {
-        val validatedLimit = limit.coerceIn(1, MAX_PAGE_SIZE)
+        val maxPageSize = validationConfig.pagination.maxPageSize
+        val defaultPageSize =
+            validationConfig.pagination.defaultPageSize
+
+        val validatedLimit =
+            (if (limit <= 0) defaultPageSize else limit)
+                .coerceIn(1, maxPageSize)
         val validatedOffset = offset.coerceAtLeast(0)
 
         val page = noteRepository.findAllByUserId(
@@ -123,9 +131,4 @@ class NoteService(
             .setUpdatedAt(updatedAt)
             .setIsDeleted(isDeleted)
             .build()
-
-    companion object {
-        private const val MAX_PAGE_SIZE = 100
-        const val DEFAULT_PAGE_SIZE = 50
-    }
 }

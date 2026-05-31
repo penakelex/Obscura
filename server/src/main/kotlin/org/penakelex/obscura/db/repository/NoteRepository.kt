@@ -13,6 +13,7 @@ import org.jetbrains.exposed.v1.jdbc.batchUpsert
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
+import org.penakelex.obscura.config.ServerConfig
 import org.penakelex.obscura.crypto.CipherType
 import org.penakelex.obscura.db.model.Note
 import org.penakelex.obscura.db.tables.Notes
@@ -25,7 +26,9 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-class NoteRepository {
+class NoteRepository(
+    private val validationConfig: ServerConfig.Validation,
+) {
     private val logger =
         LoggerFactory.getLogger(NoteRepository::class.java)
 
@@ -47,18 +50,18 @@ class NoteRepository {
         userId: Uuid,
         changes: List<NoteProto>,
     ) = withContext(Dispatchers.IO) {
+        val maxSize = validationConfig.note.maxEncryptedSizeBytes
+
         val oversizedCount = changes.count {
-            it.encryptedData.size() > MAX_ENCRYPTED_SIZE
+            it.encryptedData.size() > maxSize
         }
 
         if (oversizedCount != 0) {
             logger.warn(
                 "User {} sent {} oversized notes (max {} bytes)",
-                userId, oversizedCount, MAX_ENCRYPTED_SIZE
+                userId, oversizedCount, maxSize
             )
-            throw ValidationException.PayloadTooLarge(
-                maxSize = MAX_ENCRYPTED_SIZE
-            )
+            throw ValidationException.PayloadTooLarge(maxSize)
         }
 
         suspendTransaction {
@@ -70,7 +73,8 @@ class NoteRepository {
             val toUpsert = changes.filter { proto ->
                 val existingUpdatedAt =
                     existingNotes[Uuid.parse(proto.id)]
-                existingUpdatedAt == null || proto.updatedAt > existingUpdatedAt
+                existingUpdatedAt == null
+                        || proto.updatedAt > existingUpdatedAt
             }
 
             toUpsert.forEach {
@@ -205,12 +209,9 @@ class NoteRepository {
                     retentionDays.days.inWholeMilliseconds
             suspendTransaction {
                 Notes.deleteWhere {
-                    (Notes.isDeleted eq true) and (Notes.updatedAt less cutoff)
+                    (Notes.isDeleted eq true) and
+                            (Notes.updatedAt less cutoff)
                 }
             }
         }
-
-    companion object {
-        private const val MAX_ENCRYPTED_SIZE = 512 * 1024
-    }
 }

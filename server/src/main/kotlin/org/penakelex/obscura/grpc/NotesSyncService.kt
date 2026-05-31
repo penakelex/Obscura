@@ -5,6 +5,7 @@ import io.grpc.Status
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
+import org.penakelex.obscura.config.ServerConfig
 import org.penakelex.obscura.db.model.Note
 import org.penakelex.obscura.db.repository.NoteRepository
 import org.penakelex.obscura.db.repository.SessionRepository
@@ -22,15 +23,11 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class NotesSyncService(
     private val noteRepository: NoteRepository,
-    private val sessionRepository: SessionRepository
+    private val sessionRepository: SessionRepository,
+    private val validationConfig: ServerConfig.Validation,
 ) : SecureNotesSyncGrpcKt.SecureNotesSyncCoroutineImplBase() {
-
     private val logger =
         LoggerFactory.getLogger(NotesSyncService::class.java)
-
-    companion object {
-        private const val MAX_CHANGES_PER_PAYLOAD = 500
-    }
 
     override fun syncNotes(
         requests: Flow<ClientSyncPayload>
@@ -71,12 +68,12 @@ class NotesSyncService(
     ) {
         try {
             val changes = clientPayload.clientChangesList
-
-            if (changes.size > MAX_CHANGES_PER_PAYLOAD) {
+            val maxChanges =
+                validationConfig.sync.maxChangesPerPayload
+            if (changes.size > maxChanges) {
                 logger.warn(
                     "Payload #{} too large from user {}: {} changes (max {})",
-                    payloadCount, userId, changes.size,
-                    MAX_CHANGES_PER_PAYLOAD
+                    payloadCount, userId, changes.size, maxChanges
                 )
                 emit(
                     ServerSyncPayload.newBuilder()

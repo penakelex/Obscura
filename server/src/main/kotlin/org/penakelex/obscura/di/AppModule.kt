@@ -29,7 +29,11 @@ fun appModule(serverConfig: ServerConfig) = module {
             sessionConfig = serverConfig.security.session,
         )
     }
-    single { NoteRepository() }
+    single {
+        NoteRepository(
+            validationConfig = serverConfig.validation,
+        )
+    }
 
     single {
         SessionCleanupJob(
@@ -64,6 +68,10 @@ fun appModule(serverConfig: ServerConfig) = module {
             validationConfig = serverConfig.validation,
         )
     }
-
-    single { NoteService(noteRepository = get()) }
+    single {
+        NoteService(
+            noteRepository = get(),
+            validationConfig = serverConfig.validation,
+        )
+    }
 }

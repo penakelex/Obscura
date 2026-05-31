@@ -12,15 +12,17 @@ fun grpcModule(serverConfig: ServerConfig) = module {
     single {
         NotesSyncService(
             noteRepository = get(),
-            sessionRepository = get()
+            sessionRepository = get(),
+            validationConfig = serverConfig.validation,
         )
     }
 
     single {
         GrpcServerManager(
-            networkConfig = serverConfig.network,
             syncService = get(),
             authInterceptor = get(),
+            networkConfig = serverConfig.network,
+            grpcServerSettings = serverConfig.server.grpc,
         )
     }
 }
