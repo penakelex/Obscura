@@ -14,7 +14,6 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.penakelex.obscura.config.ServerConfig
-import org.penakelex.obscura.crypto.CipherType
 import org.penakelex.obscura.db.model.Note
 import org.penakelex.obscura.db.tables.Notes
 import org.penakelex.obscura.exception.validation.ValidationException
@@ -101,16 +100,7 @@ class NoteRepository(
                 this[Notes.userId] = userId
                 this[Notes.encryptedData] =
                     proto.encryptedData.toByteArray()
-
-                val cipherType =
-                    CipherType.fromIdOrFallback(proto.cipherType)
-                if (cipherType.id != proto.cipherType) {
-                    logger.warn(
-                        "Invalid cipher_type {} from user {}, using fallback {}",
-                        proto.cipherType, userId, cipherType.id
-                    )
-                }
-                this[Notes.cipherType] = cipherType.id
+                this[Notes.cipherType] = proto.cipherType
                 this[Notes.updatedAt] = proto.updatedAt
                 this[Notes.isDeleted] = proto.isDeleted
             }.forEach {

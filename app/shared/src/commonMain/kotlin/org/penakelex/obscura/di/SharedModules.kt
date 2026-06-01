@@ -4,5 +4,9 @@ import org.koin.core.module.Module
 
 val sharedModules: List<Module> = listOf(
     databaseModule,
-    repositoryModule
+    repositoryModule,
+    networkModule,
+    syncModule,
+    useCaseModule,
+    settingsModule,
 )

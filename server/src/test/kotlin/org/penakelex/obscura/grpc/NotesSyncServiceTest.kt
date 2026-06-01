@@ -26,7 +26,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.penakelex.obscura.config.ServerConfig
-import org.penakelex.obscura.crypto.CipherType
 import org.penakelex.obscura.db.repository.NoteRepository
 import org.penakelex.obscura.db.repository.SessionRepository
 import org.penakelex.obscura.db.tables.Notes
@@ -183,7 +182,7 @@ class NotesSyncServiceTest {
     private fun noteProto(
         id: String,
         data: String = "encrypted-data",
-        cipherType: Int = CipherType.DEFAULT.id,
+        cipherType: Int = 1,
         updatedAt: Long = System.currentTimeMillis(),
         isDeleted: Boolean = false
     ): NoteProto = NoteProto.newBuilder()
@@ -465,7 +464,6 @@ class NotesSyncServiceTest {
         )
         syncFlow(stub1, listOf(payload(changes = listOf(note))))
 
-        // Создаём второго пользователя
         val otherUserId =
             Uuid.parse("99999999-9999-9999-9999-999999999999")
         transaction {

@@ -42,6 +42,8 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling.preview)
             implementation(libs.tink.android)
+            implementation(libs.androidx.security.crypto)
+            implementation(libs.androidx.datastore.preferences)
         }
         jvmMain.dependencies {
             implementation(libs.tink)
@@ -66,6 +68,14 @@ kotlin {
             api(libs.koin.core)
             api(libs.koin.compose)
             api(libs.koin.compose.viewmodel)
+
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.ktor.client.logging)
+
+            implementation(libs.grpc.okhttp)
 
             implementation(libs.grpc.kotlin.stub)
             implementation(libs.grpc.stub)
