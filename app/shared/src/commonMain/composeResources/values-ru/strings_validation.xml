@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="validation_email_blank">Введите email</string>
+    <string name="validation_email_too_long">Email слишком длинный (макс. %1$d символов)</string>
+    <string name="validation_email_invalid_format">Некорректный формат email</string>
+    <string name="validation_password_too_short">Пароль слишком короткий (мин. %1$d символов)</string>
+    <string name="validation_password_too_long">Пароль слишком длинный (макс. %1$d символов)</string>
+    <string name="validation_current_password_blank">Введите текущий пароль</string>
+    <string name="validation_passwords_match">Новый пароль должен отличаться от текущего</string>
+    <string name="validation_content_blank">Заметка не может быть пустой</string>
+    <string name="validation_content_too_long">Заметка слишком длинная (макс. %1$d символов)</string>
+    <string name="validation_invalid_timestamp">Некорректная временная метка</string>
+</resources>

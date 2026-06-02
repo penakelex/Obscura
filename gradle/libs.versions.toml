@@ -20,6 +20,7 @@ kotlinxSerializationJson = "1.11.0"
 ktor = "3.5.0"
 logback = "1.5.33"
 material3 = "1.11.0-alpha07"
+materialIconsExtended = "1.7.3"
 mockk = "1.14.9"
 password4j = "1.8.4"
 postgresql = "42.7.11"
@@ -38,6 +39,9 @@ ktorClient = "3.5.0"
 grpcOkhttp = "1.81.0"
 androidxSecurityCrypto = "1.1.0"
 androidxDatastore = "1.2.1"
+navigation = "2.9.2"
+markdownRenderer = "0.41.0"
+kotlinxDatetime = "0.8.0"
 
 [libraries]
 config = { module = "com.typesafe:config", version.ref = "config" }
@@ -84,6 +88,7 @@ logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-serverTestHost = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
+material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 password4j = { module = "com.password4j:password4j", version.ref = "password4j" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
@@ -113,6 +118,9 @@ ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "k
 grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpcOkhttp" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidxSecurityCrypto" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidxDatastore" }
+androidx-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation" }
+multiplatform-markdown-renderer-m3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "markdownRenderer" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

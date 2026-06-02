@@ -18,5 +18,6 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "Obscura",
     ) {
+        App()
     }
 }

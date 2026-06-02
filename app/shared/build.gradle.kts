@@ -60,6 +60,12 @@ kotlin {
             implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.lifecycle.runtime.compose)
+            implementation(libs.material.icons.extended)
+
+            implementation(libs.androidx.navigation.compose)
+
+            implementation(libs.multiplatform.markdown.renderer.m3)
+            implementation(libs.kotlinx.datetime)
 
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.sqlite.bundled)

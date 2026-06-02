@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="size_bytes">Б</string>
+    <string name="size_kb">КБ</string>
+    <string name="size_mb">МБ</string>
+    <string name="size_gb">ГБ</string>
+    <string name="size_tb">ТБ</string>
+</resources>

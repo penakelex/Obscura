@@ -1,0 +1,99 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "f3ba027cf4c47dc79d2390dd24cfd6c6",
+    "entities": [
+      {
+        "tableName": "notes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `encryptedData` BLOB NOT NULL, `cipherType` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `syncStatus` INTEGER NOT NULL, `version` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "encryptedData",
+            "columnName": "encryptedData",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cipherType",
+            "columnName": "cipherType",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "isDeleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_notes_syncStatus_updatedAt",
+            "unique": false,
+            "columnNames": [
+              "syncStatus",
+              "updatedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_notes_syncStatus_updatedAt` ON `${TABLE_NAME}` (`syncStatus`, `updatedAt`)"
+          },
+          {
+            "name": "index_notes_isDeleted_updatedAt",
+            "unique": false,
+            "columnNames": [
+              "isDeleted",
+              "updatedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_notes_isDeleted_updatedAt` ON `${TABLE_NAME}` (`isDeleted`, `updatedAt`)"
+          },
+          {
+            "name": "index_notes_isDeleted_syncStatus",
+            "unique": false,
+            "columnNames": [
+              "isDeleted",
+              "syncStatus"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_notes_isDeleted_syncStatus` ON `${TABLE_NAME}` (`isDeleted`, `syncStatus`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f3ba027cf4c47dc79d2390dd24cfd6c6')"
+    ]
+  }
+}

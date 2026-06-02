@@ -15,9 +15,9 @@ val settingsModule: Module = module {
 
     factory { GetSettingsUseCase(settingsGateway = get()) }
     factory { SetDefaultCipherTypeUseCase(settingsGateway = get()) }
-    factory { ToggleDarkModeUseCase(settingsGateway = get()) }
     factory { ToggleAutoSyncUseCase(settingsGateway = get()) }
     factory {
         UpdateLastSyncTimestampUseCase(settingsGateway = get())
     }
+    factory { SetThemeModeUseCase(settingsGateway = get()) }
 }

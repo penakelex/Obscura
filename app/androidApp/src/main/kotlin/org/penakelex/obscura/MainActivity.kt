@@ -1,3 +1,4 @@
+
 package org.penakelex.obscura
 
 import android.os.Bundle
@@ -13,6 +14,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
+            App()
         }
     }
 }
@@ -20,4 +22,5 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
+    App()
 }

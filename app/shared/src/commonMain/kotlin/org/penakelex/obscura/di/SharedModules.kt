@@ -9,4 +9,5 @@ val sharedModules: List<Module> = listOf(
     syncModule,
     useCaseModule,
     settingsModule,
+    navigationModule,
 )
