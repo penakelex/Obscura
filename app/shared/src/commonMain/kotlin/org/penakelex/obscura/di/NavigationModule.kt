@@ -5,5 +5,5 @@ import org.koin.dsl.module
 import org.penakelex.obscura.presentation.navigation.Navigator
 
 val navigationModule: Module = module {
-    factory { Navigator() }
+    single { Navigator() }
 }

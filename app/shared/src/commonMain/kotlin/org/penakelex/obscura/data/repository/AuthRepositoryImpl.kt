@@ -9,11 +9,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import org.penakelex.obscura.contract.rest.common.auth.KeysetData
 import org.penakelex.obscura.contract.rest.requests.account.ChangeEmailRequest
 import org.penakelex.obscura.contract.rest.requests.account.ChangePasswordRequest
 import org.penakelex.obscura.contract.rest.requests.account.DeleteAccountRequest
-import org.penakelex.obscura.contract.rest.requests.auth.LoginRequest
-import org.penakelex.obscura.contract.rest.requests.auth.RegisterRequest
+import org.penakelex.obscura.contract.rest.requests.auth.AuthRequest
+import org.penakelex.obscura.contract.rest.requests.auth.ChallengeRequest
+import org.penakelex.obscura.data.crypto.CryptoProvider
 import org.penakelex.obscura.data.mapper.AuthMapper.toDomain
 import org.penakelex.obscura.data.mapper.AuthMapper.toDomainList
 import org.penakelex.obscura.data.mapper.AuthMapper.toSessionData
@@ -32,8 +34,8 @@ import kotlin.uuid.Uuid
 class AuthRepositoryImpl(
     private val authApiClient: AuthApiClient,
     private val tokenStorage: TokenStorage,
+    private val cryptoProvider: CryptoProvider,
 ) : AuthRepository {
-
     private val logger = Logger.withTag(LOG_TAG)
     private val scope =
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -68,32 +70,62 @@ class AuthRepositoryImpl(
     override fun isLoggedIn(): Boolean =
         _sessionState.value is SessionState.Authenticated
 
-    override suspend fun register(email: String, password: String) {
-        try {
-            authApiClient.register(
-                RegisterRequest(email = email, password = password)
-            )
-            logger.i { "User registered: $email" }
+    override suspend fun getChallenge(email: String): String {
+        return try {
+            authApiClient.challenge(ChallengeRequest(email)).salt
         } catch (e: ApiException) {
             throw mapApiException(e)
         }
     }
 
+    override suspend fun getCurrentKeyset(): KeysetData? {
+        val session = tokenStorage.sessionFlow.value
+        val encryptedKeyset = session?.encryptedKeyset
+        val salt = session?.salt
+        return if (encryptedKeyset != null && salt != null) {
+            KeysetData(
+                salt = salt,
+                encryptedKeyset = encryptedKeyset,
+            )
+        } else {
+            null
+        }
+    }
+
+    override suspend fun register(
+        email: String,
+        authHash: String,
+        deviceInfo: String?,
+        keyset: KeysetData,
+    ) {
+        val response = authApiClient.register(
+            AuthRequest(
+                email = email,
+                authHash = authHash,
+                deviceInfo = deviceInfo,
+                keyset = keyset,
+            )
+        )
+        tokenStorage.save(response.toSessionData())
+        logger.i { "User registered: $email" }
+    }
+
     override suspend fun login(
         email: String,
-        password: String,
-        deviceInfo: String?
-    ) {
-        try {
+        authHash: String,
+        deviceInfo: String?,
+    ): KeysetData {
+        return try {
             val response = authApiClient.login(
-                LoginRequest(
+                AuthRequest(
                     email = email,
-                    password = password,
-                    deviceInfo = deviceInfo
+                    authHash = authHash,
+                    deviceInfo = deviceInfo,
                 )
             )
             tokenStorage.save(response.toSessionData())
             logger.i { "User logged in: $email" }
+            response.keyset ?: throw AuthException.KeysetNotFound()
         } catch (e: ApiException) {
             throw mapApiException(e)
         }
@@ -127,7 +159,6 @@ class AuthRepositoryImpl(
             if (e is ApiException.Unauthorized) {
                 safeClearToken()
             }
-
             throw mapApiException(e)
         }
     }
@@ -143,16 +174,18 @@ class AuthRepositoryImpl(
     }
 
     override suspend fun changePassword(
-        currentPassword: String,
-        newPassword: String
+        currentAuthHash: String,
+        newAuthHash: String,
+        newKeyset: KeysetData,
     ) {
         val token = requireToken()
         try {
             authApiClient.changePassword(
                 token = token,
                 request = ChangePasswordRequest(
-                    currentPassword = currentPassword,
-                    newPassword = newPassword
+                    currentAuthHash = currentAuthHash,
+                    newAuthHash = newAuthHash,
+                    newKeyset = newKeyset,
                 )
             )
             safeClearToken()
@@ -164,16 +197,16 @@ class AuthRepositoryImpl(
     }
 
     override suspend fun changeEmail(
-        currentPassword: String,
-        newEmail: String
+        currentAuthHash: String,
+        newEmail: String,
     ) {
         val token = requireToken()
         try {
             authApiClient.changeEmail(
                 token = token,
                 request = ChangeEmailRequest(
-                    currentPassword = currentPassword,
-                    newEmail = newEmail
+                    currentAuthHash = currentAuthHash,
+                    newEmail = newEmail,
                 )
             )
             logger.i { "Email changed to: $newEmail" }
@@ -183,13 +216,13 @@ class AuthRepositoryImpl(
         }
     }
 
-    override suspend fun deleteAccount(currentPassword: String) {
+    override suspend fun deleteAccount(currentAuthHash: String) {
         val token = requireToken()
         try {
             authApiClient.deleteAccount(
                 token = token,
                 request = DeleteAccountRequest(
-                    currentPassword = currentPassword
+                    currentAuthHash = currentAuthHash,
                 )
             )
             safeClearToken()
@@ -248,9 +281,10 @@ class AuthRepositoryImpl(
 
     private suspend fun safeClearToken() {
         try {
+            cryptoProvider.reset()
             tokenStorage.clear()
         } catch (e: Exception) {
-            logger.e(e) { "Failed to clear token storage" }
+            logger.e(e) { "Failed to clear session" }
         }
     }
 

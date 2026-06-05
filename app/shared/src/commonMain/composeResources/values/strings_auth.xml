@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login">Войти</string>
+    <string name="register">Зарегистрироваться</string>
+    <string name="logout">Выйти</string>
+    <string name="logout_all">Выйти со всех устройств</string>
+    <string name="email">Email</string>
+    <string name="password">Пароль</string>
+    <string name="current_password">Текущий пароль</string>
+    <string name="new_password">Новый пароль</string>
+    <string name="email_placeholder">user@example.com</string>
+    <string name="forgot_password">Забыли пароль?</string>
+    <string name="no_account">Нет аккаунта?</string>
+    <string name="have_account">Уже есть аккаунт?</string>
+    <string name="login_success">Вход выполнен успешно</string>
+    <string name="register_success">Регистрация завершена</string>
+    <string name="logout_success">Вы вышли из аккаунта</string>
+    <string name="password_changed">Пароль изменён</string>
+    <string name="email_changed">Email изменён</string>
+    <string name="account_deleted">Аккаунт удалён</string>
+    <string name="session_revoked">Сессия отозвана</string>
+    <string name="password_warning">Запомните пароль. Восстановление невозможно из-за end-to-end шифрования.</string>
+    <string name="device_info_optional">Имя устройства (необязательно)</string>
+    <string name="device_info_placeholder">напр. Домашний ПК, Pixel 8</string>
+    <string name="welcome">Добро пожаловать!</string>
+    <string name="master_password">Мастер-пароль</string>
+    <string name="confirm_master_password">Подтвердите мастер-пароль</string>
+    <string name="master_password_warning">Мастер-пароль используется для шифрования ключей. Запомните его — восстановление невозможно.</string>
+</resources>

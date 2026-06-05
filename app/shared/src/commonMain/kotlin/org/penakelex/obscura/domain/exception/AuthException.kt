@@ -23,6 +23,14 @@ sealed class AuthException(
         cause
     )
 
+    class KeysetNotFound : AuthException(
+        "Encryption keyset not found on server"
+    )
+
+    class KeysetDecryptionFailed : AuthException(
+        "Failed to decrypt keyset — wrong master password"
+    )
+
     class ServerError(
         val statusCode: Int,
         message: String

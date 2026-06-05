@@ -1,17 +1,23 @@
 package org.penakelex.obscura.rest.service
 
 import io.ktor.client.call.body
-import io.ktor.client.request.*
-import io.ktor.http.*
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
 import kotlinx.coroutines.test.runTest
 import org.penakelex.obscura.cleanupDatabase
 import org.penakelex.obscura.contract.ErrorCodes
-import org.penakelex.obscura.contract.rest.requests.auth.LoginRequest
-import org.penakelex.obscura.contract.rest.requests.auth.RegisterRequest
+import org.penakelex.obscura.contract.rest.common.auth.KeysetData
+import org.penakelex.obscura.contract.rest.requests.auth.AuthRequest
 import org.penakelex.obscura.contract.rest.requests.sync.NoteChange
 import org.penakelex.obscura.contract.rest.requests.sync.SyncRequest
-import org.penakelex.obscura.contract.rest.responses.auth.LoginResponse
+import org.penakelex.obscura.contract.rest.responses.auth.SessionResponse
 import org.penakelex.obscura.contract.rest.responses.notes.NoteResponse
 import org.penakelex.obscura.contract.rest.responses.notes.NotesListResponse
 import org.penakelex.obscura.contract.rest.responses.sync.DeltaResponse
@@ -25,6 +31,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class NotesServiceTest {
+    private val mockKeyset = KeysetData(
+        salt = "c2FsdA==",
+        encryptedKeyset = "ZW5jcnlwdGVkX2tleXNldA=="
+    )
+
     @AfterTest
     fun tearDown() {
         cleanupDatabase()
@@ -36,13 +47,13 @@ class NotesServiceTest {
     ): String {
         client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
-            setBody(RegisterRequest(email, "SecurePass123"))
+            setBody(AuthRequest(email = email, authHash = "SecurePass123", keyset = mockKeyset))
         }
         val response = client.post("/api/auth/login") {
             contentType(ContentType.Application.Json)
-            setBody(LoginRequest(email, "SecurePass123"))
+            setBody(AuthRequest(email = email, authHash = "SecurePass123"))
         }
-        return response.body<LoginResponse>().token
+        return response.body<SessionResponse>().token
     }
 
     private fun encodeData(text: String): String =
@@ -66,18 +77,12 @@ class NotesServiceTest {
             client.post("/api/notes/sync") {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 contentType(ContentType.Application.Json)
-                setBody(
-                    SyncRequest(
-                        lastSyncTimestamp = 0L,
-                        changes = changes
-                    )
-                )
+                setBody(SyncRequest(lastSyncTimestamp = 0L, changes = changes))
             }
 
-            val listResponse =
-                client.get("/api/notes?limit=2&offset=0") {
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
+            val listResponse = client.get("/api/notes?limit=2&offset=0") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
             assertEquals(HttpStatusCode.OK, listResponse.status)
             val body = listResponse.body<NotesListResponse>()
             assertEquals(2, body.notes.size)
@@ -137,17 +142,12 @@ class NotesServiceTest {
             val client = setupTestApp()
             val token = registerAndLogin(client)
 
-            val response =
-                client.get("/api/notes/99999999-9999-9999-9999-999999999999") {
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
+            val response = client.get("/api/notes/99999999-9999-9999-9999-999999999999") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
             assertEquals(HttpStatusCode.NotFound, response.status)
-            val error =
-                response.body<org.penakelex.obscura.contract.rest.responses.common.ErrorResponse>()
-            assertEquals(
-                ErrorCodes.Resources.NOTE_NOT_FOUND,
-                error.code
-            )
+            val error = response.body<org.penakelex.obscura.contract.rest.responses.common.ErrorResponse>()
+            assertEquals(ErrorCodes.Resources.NOTE_NOT_FOUND, error.code)
         }
     }
 
@@ -192,12 +192,7 @@ class NotesServiceTest {
             val syncResponse = client.post("/api/notes/sync") {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 contentType(ContentType.Application.Json)
-                setBody(
-                    SyncRequest(
-                        lastSyncTimestamp = 0L,
-                        changes = emptyList()
-                    )
-                )
+                setBody(SyncRequest(lastSyncTimestamp = 0L, changes = emptyList()))
             }
             assertEquals(HttpStatusCode.OK, syncResponse.status)
             val body = syncResponse.body<SyncResponse>()
@@ -232,19 +227,17 @@ class NotesServiceTest {
                 )
             }
 
-            val deltaResponse =
-                client.get("/api/notes/delta?since=${now - 1000}") {
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
+            val deltaResponse = client.get("/api/notes/delta?since=${now - 1000}") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
             assertEquals(HttpStatusCode.OK, deltaResponse.status)
             val body = deltaResponse.body<DeltaResponse>()
             assertEquals(1, body.notes.size)
             assertEquals(now - 1000, body.sinceTimestamp)
 
-            val emptyDelta =
-                client.get("/api/notes/delta?since=${now + 1000}") {
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
+            val emptyDelta = client.get("/api/notes/delta?since=${now + 1000}") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
             assertEquals(HttpStatusCode.OK, emptyDelta.status)
             assertTrue(emptyDelta.body<DeltaResponse>().notes.isEmpty())
         }

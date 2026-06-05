@@ -4,6 +4,7 @@ import org.koin.dsl.module
 import org.penakelex.obscura.config.ServerConfig
 import org.penakelex.obscura.db.repository.NoteRepository
 import org.penakelex.obscura.db.repository.SessionRepository
+import org.penakelex.obscura.db.repository.UserKeysetRepository
 import org.penakelex.obscura.db.repository.UserRepository
 import org.penakelex.obscura.jobs.NotesCleanupJob
 import org.penakelex.obscura.jobs.SessionCleanupJob
@@ -34,6 +35,7 @@ fun appModule(serverConfig: ServerConfig) = module {
             validationConfig = serverConfig.validation,
         )
     }
+    single { UserKeysetRepository() }
 
     single {
         SessionCleanupJob(
@@ -64,6 +66,7 @@ fun appModule(serverConfig: ServerConfig) = module {
             userRepository = get(),
             sessionRepository = get(),
             noteRepository = get(),
+            userKeysetRepository = get(),
             passwordHasher = get(),
             validationConfig = serverConfig.validation,
         )

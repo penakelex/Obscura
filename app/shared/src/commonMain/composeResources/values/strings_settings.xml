@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings">Настройки</string>
+    <string name="settings_saved">Настройки сохранены</string>
+    <string name="appearance">Внешний вид</string>
+    <string name="theme">Тема</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="theme_system">Системная</string>
+    <string name="security">Безопасность</string>
+    <string name="default_cipher">Шифр по умолчанию</string>
+    <string name="cipher_aes_gcm">AES-256-GCM</string>
+    <string name="cipher_xchacha20">XChaCha20-Poly1305</string>
+    <string name="sync">Синхронизация</string>
+    <string name="auto_sync">Автосинхронизация</string>
+    <string name="auto_sync_description">Автоматически синхронизировать заметки при наличии сети</string>
+    <string name="sync_completed">Синхронизация завершена</string>
+    <string name="sync_failed">Ошибка синхронизации</string>
+    <string name="sync_now">Синхронизировать</string>
+    <string name="last_sync">Последняя синхронизация: %1$s</string>
+    <string name="account">Аккаунт</string>
+    <string name="sessions">Активные сессии</string>
+    <string name="change_password">Сменить пароль</string>
+    <string name="change_email">Сменить email</string>
+    <string name="delete_account">Удалить аккаунт</string>
+    <string name="delete_account_confirm">Это действие необратимо. Все ваши данные будут удалены с сервера.</string>
+    <string name="menu_settings">Настройки</string>
+    <string name="menu_account">Аккаунт</string>
+    <string name="menu_sessions">Сессии</string>
+    <string name="logout_confirm_title">Выйти из аккаунта?</string>
+    <string name="logout_confirm_message">Локальные данные останутся на устройстве. Вы сможете войти снова.</string>
+    <string name="logout_all_confirm_title">Выйти со всех устройств?</string>
+    <string name="logout_all_confirm_message">Все активные сессии будут отозваны. Локальные данные сохранятся.</string>
+    <string name="sync_guest_message">Синхронизация доступна после входа в аккаунт</string>
+</resources>

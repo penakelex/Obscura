@@ -9,43 +9,44 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.penakelex.obscura.domain.model.auth.SessionData
 import java.io.File
 import java.io.FileNotFoundException
 
 actual class TokenStorage(private val context: Context) {
-
     private val logger = Logger.withTag(StorageConfig.Log.TAG)
     private val mutex = Mutex()
+
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
         prettyPrint = false
+        isLenient = false
     }
 
     private val sessionFile: File by lazy {
-        val dir = File(context.filesDir, StorageConfig.Android.APP_DIR_NAME)
-
+        val dir =
+            File(context.filesDir, StorageConfig.Android.APP_DIR_NAME)
         if (!dir.exists()) {
             dir.mkdirs()
         }
-
         File(dir, StorageConfig.Android.SESSION_FILE_NAME)
     }
 
     private val _sessionFlow = MutableStateFlow(loadSync())
-    actual val sessionFlow: StateFlow<SessionData?> = _sessionFlow.asStateFlow()
+    actual val sessionFlow: StateFlow<SessionData?> =
+        _sessionFlow.asStateFlow()
 
     actual suspend fun save(session: SessionData) = mutex.withLock {
         withContext(Dispatchers.IO) {
             try {
-                val dto = session.toDto()
-                val content = json.encodeToString(dto)
+                val content = json.encodeToString(session)
                 sessionFile.writeText(content, Charsets.UTF_8)
                 _sessionFlow.value = session
-                logger.i { "Session saved for user: ${session.userId}" }
+                logger.i {
+                    "Session saved for user: ${session.userId}"
+                }
             } catch (e: Exception) {
                 logger.e(e) { "Failed to save session" }
                 throw TokenStorageException.SaveFailed(e)
@@ -73,8 +74,7 @@ actual class TokenStorage(private val context: Context) {
             null
         } else {
             val content = sessionFile.readText(Charsets.UTF_8)
-            val dto = json.decodeFromString<SessionDto>(content)
-            dto.toDomain().also {
+            json.decodeFromString<SessionData>(content).also {
                 logger.d { "Session restored for user: ${it.userId}" }
             }
         }
@@ -84,14 +84,4 @@ actual class TokenStorage(private val context: Context) {
         logger.w(e) { "Failed to restore session on init" }
         null
     }
-
-    @Serializable
-    private data class SessionDto(
-        val token: String,
-        val userId: String,
-        val expiresAt: Long
-    )
-
-    private fun SessionData.toDto() = SessionDto(token, userId, expiresAt)
-    private fun SessionDto.toDomain() = SessionData(token, userId, expiresAt)
 }

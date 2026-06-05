@@ -7,42 +7,34 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun DateLabel.toDisplayString(): String = when (this) {
     is DateLabel.Today -> time
-
     is DateLabel.Yesterday ->
         stringResource(Res.string.date_yesterday_with_time, time)
-
     is DateLabel.ThisWeek -> {
         val month = monthShort(monthNumber)
         "$dayOfMonth $month, $time"
     }
-
     is DateLabel.ThisYear -> {
         val month = monthShort(monthNumber)
         "$dayOfMonth $month"
     }
-
     is DateLabel.Older -> {
         val month = monthShort(monthNumber)
         "$dayOfMonth $month $year"
     }
-
     DateLabel.JustNow ->
         stringResource(Res.string.date_just_now)
-
     is DateLabel.MinutesAgo ->
         stringResource(Res.string.date_minutes_ago, minutes)
-
     is DateLabel.HoursAgo ->
         stringResource(Res.string.date_hours_ago, hours)
-
     is DateLabel.DaysAgo ->
         stringResource(Res.string.date_days_ago, days)
-}
-
-@Composable
-fun DateFormatter.FullDate.toDisplayString(): String {
-    val month = monthLong(monthNumber)
-    return "$dayOfMonth $month $year, $time"
+    is DateLabel.InMinutes ->
+        stringResource(Res.string.date_in_minutes, minutes)
+    is DateLabel.InHours ->
+        stringResource(Res.string.date_in_hours, hours)
+    is DateLabel.InDays ->
+        stringResource(Res.string.date_in_days, days)
 }
 
 @Composable

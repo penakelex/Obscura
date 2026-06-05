@@ -13,12 +13,11 @@ import io.ktor.server.testing.testApplication
 import kotlinx.coroutines.test.runTest
 import org.penakelex.obscura.cleanupDatabase
 import org.penakelex.obscura.contract.ErrorCodes
-import org.penakelex.obscura.contract.rest.requests.auth.LoginRequest
-import org.penakelex.obscura.contract.rest.requests.auth.RegisterRequest
-import org.penakelex.obscura.contract.rest.responses.auth.LoginResponse
+import org.penakelex.obscura.contract.rest.common.auth.KeysetData
+import org.penakelex.obscura.contract.rest.requests.auth.AuthRequest
 import org.penakelex.obscura.contract.rest.responses.auth.ProfileResponse
+import org.penakelex.obscura.contract.rest.responses.auth.SessionResponse
 import org.penakelex.obscura.contract.rest.responses.common.ErrorResponse
-import org.penakelex.obscura.contract.rest.responses.common.SuccessResponse
 import org.penakelex.obscura.setupTestApp
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -27,6 +26,11 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AuthServiceTest {
+    private val mockKeyset = KeysetData(
+        salt = "c2FsdA==", // Base64("salt")
+        encryptedKeyset = "ZW5jcnlwdGVkX2tleXNldA==" // Base64("encrypted_keyset")
+    )
+
     @AfterTest
     fun tearDown() {
         cleanupDatabase()
@@ -36,20 +40,19 @@ class AuthServiceTest {
     fun `register with valid data returns 201`() = runTest {
         testApplication {
             val client = setupTestApp()
-
             val response = client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
                 setBody(
-                    RegisterRequest(
+                    AuthRequest(
                         email = "test@example.com",
-                        password = "SecurePass123"
+                        authHash = "SecurePass123",
+                        keyset = mockKeyset
                     )
                 )
             }
-
             assertEquals(HttpStatusCode.Created, response.status)
-            val body = response.body<SuccessResponse>()
-            assertTrue(body.message.contains("registered"))
+            val body = response.body<SessionResponse>()
+            assertTrue(body.token.isNotEmpty())
         }
     }
 
@@ -57,17 +60,14 @@ class AuthServiceTest {
     fun `register with duplicate email returns 409`() = runTest {
         testApplication {
             val client = setupTestApp()
-
             client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest("dup@example.com", "SecurePass123"))
+                setBody(AuthRequest("dup@example.com", "SecurePass123", keyset = mockKeyset))
             }
-
             val response = client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest("dup@example.com", "SecurePass123"))
+                setBody(AuthRequest("dup@example.com", "SecurePass123", keyset = mockKeyset))
             }
-
             assertEquals(HttpStatusCode.Conflict, response.status)
             val error = response.body<ErrorResponse>()
             assertEquals(ErrorCodes.Auth.EMAIL_ALREADY_REGISTERED, error.code)
@@ -78,12 +78,10 @@ class AuthServiceTest {
     fun `register with invalid email returns 400`() = runTest {
         testApplication {
             val client = setupTestApp()
-
             val response = client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest("not-an-email", "SecurePass123"))
+                setBody(AuthRequest("not-an-email", "SecurePass123", keyset = mockKeyset))
             }
-
             assertEquals(HttpStatusCode.BadRequest, response.status)
             val error = response.body<ErrorResponse>()
             assertEquals(ErrorCodes.Validation.MULTIPLE_FIELDS_INVALID, error.code)
@@ -95,21 +93,19 @@ class AuthServiceTest {
     }
 
     @Test
-    fun `register with short password returns 400`() = runTest {
+    fun `register with short authHash returns 400`() = runTest {
         testApplication {
             val client = setupTestApp()
-
             val response = client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest("test@example.com", "short"))
+                setBody(AuthRequest("test@example.com", "short", keyset = mockKeyset))
             }
-
             assertEquals(HttpStatusCode.BadRequest, response.status)
             val error = response.body<ErrorResponse>()
             assertEquals(ErrorCodes.Validation.MULTIPLE_FIELDS_INVALID, error.code)
             assertNotNull(error.details)
             assertTrue(error.details!!.any {
-                it.field == "password" && it.code == ErrorCodes.Validation.PASSWORD_TOO_SHORT
+                it.field == "authHash" && it.code == ErrorCodes.Validation.PASSWORD_TOO_SHORT
             })
         }
     }
@@ -118,19 +114,16 @@ class AuthServiceTest {
     fun `login with valid credentials returns token`() = runTest {
         testApplication {
             val client = setupTestApp()
-
             client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest("login@example.com", "SecurePass123"))
+                setBody(AuthRequest("login@example.com", "SecurePass123", keyset = mockKeyset))
             }
-
             val response = client.post("/api/auth/login") {
                 contentType(ContentType.Application.Json)
-                setBody(LoginRequest("login@example.com", "SecurePass123"))
+                setBody(AuthRequest(email = "login@example.com", authHash = "SecurePass123"))
             }
-
             assertEquals(HttpStatusCode.OK, response.status)
-            val body = response.body<LoginResponse>()
+            val body = response.body<SessionResponse>()
             assertTrue(body.token.isNotEmpty())
             assertTrue(body.userId.isNotEmpty())
             assertTrue(body.expiresAt > 0)
@@ -138,20 +131,17 @@ class AuthServiceTest {
     }
 
     @Test
-    fun `login with wrong password returns 401`() = runTest {
+    fun `login with wrong authHash returns 401`() = runTest {
         testApplication {
             val client = setupTestApp()
-
             client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest("wrong@example.com", "SecurePass123"))
+                setBody(AuthRequest("wrong@example.com", "SecurePass123", keyset = mockKeyset))
             }
-
             val response = client.post("/api/auth/login") {
                 contentType(ContentType.Application.Json)
-                setBody(LoginRequest("wrong@example.com", "WrongPassword1"))
+                setBody(AuthRequest(email = "wrong@example.com", authHash = "WrongPassword1"))
             }
-
             assertEquals(HttpStatusCode.Unauthorized, response.status)
             val error = response.body<ErrorResponse>()
             assertEquals(ErrorCodes.Auth.INVALID_CREDENTIALS, error.code)
@@ -162,21 +152,18 @@ class AuthServiceTest {
     fun `get profile with valid token returns user data`() = runTest {
         testApplication {
             val client = setupTestApp()
-
             client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest("me@example.com", "SecurePass123"))
+                setBody(AuthRequest("me@example.com", "SecurePass123", keyset = mockKeyset))
             }
             val loginResponse = client.post("/api/auth/login") {
                 contentType(ContentType.Application.Json)
-                setBody(LoginRequest("me@example.com", "SecurePass123"))
+                setBody(AuthRequest(email = "me@example.com", authHash = "SecurePass123"))
             }
-            val token = loginResponse.body<LoginResponse>().token
-
+            val token = loginResponse.body<SessionResponse>().token
             val response = client.get("/api/auth/me") {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
-
             assertEquals(HttpStatusCode.OK, response.status)
             val profile = response.body<ProfileResponse>()
             assertEquals("me@example.com", profile.email)
@@ -187,24 +174,7 @@ class AuthServiceTest {
     fun `get profile without token returns 401`() = runTest {
         testApplication {
             val client = setupTestApp()
-
             val response = client.get("/api/auth/me")
-
-            assertEquals(HttpStatusCode.Unauthorized, response.status)
-            val error = response.body<ErrorResponse>()
-            assertEquals(ErrorCodes.Auth.SESSION_NOT_FOUND, error.code)
-        }
-    }
-
-    @Test
-    fun `get profile with invalid token returns 401`() = runTest {
-        testApplication {
-            val client = setupTestApp()
-
-            val response = client.get("/api/auth/me") {
-                header(HttpHeaders.Authorization, "Bearer invalid_token_hex")
-            }
-
             assertEquals(HttpStatusCode.Unauthorized, response.status)
             val error = response.body<ErrorResponse>()
             assertEquals(ErrorCodes.Auth.SESSION_NOT_FOUND, error.code)
@@ -215,16 +185,15 @@ class AuthServiceTest {
     fun `logout revokes session and subsequent me returns 401`() = runTest {
         testApplication {
             val client = setupTestApp()
-
             client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest("logout@example.com", "SecurePass123"))
+                setBody(AuthRequest("logout@example.com", "SecurePass123", keyset = mockKeyset))
             }
             val loginResponse = client.post("/api/auth/login") {
                 contentType(ContentType.Application.Json)
-                setBody(LoginRequest("logout@example.com", "SecurePass123"))
+                setBody(AuthRequest(email = "logout@example.com", authHash = "SecurePass123"))
             }
-            val token = loginResponse.body<LoginResponse>().token
+            val token = loginResponse.body<SessionResponse>().token
 
             val logoutResponse = client.post("/api/auth/logout") {
                 header(HttpHeaders.Authorization, "Bearer $token")

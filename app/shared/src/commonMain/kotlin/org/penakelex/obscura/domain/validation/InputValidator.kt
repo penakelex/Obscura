@@ -10,6 +10,7 @@ object InputValidator {
         const val PASSWORD_MIN_LENGTH = 8
         const val PASSWORD_MAX_LENGTH = 128
         const val NOTE_CONTENT_MAX_LENGTH = 100_000
+        const val DEVICE_INFO_MAX_LENGTH = 128
     }
 
     fun validateEmail(email: String): List<ValidationError> =
@@ -41,6 +42,13 @@ object InputValidator {
                 content.isBlank() -> add(ValidationError.ContentBlank())
                 content.length > Limits.NOTE_CONTENT_MAX_LENGTH ->
                     add(ValidationError.ContentTooLong(Limits.NOTE_CONTENT_MAX_LENGTH))
+            }
+        }
+
+    fun validateDeviceInfo(deviceInfo: String): List<ValidationError> =
+        buildList {
+            if (deviceInfo.length > Limits.DEVICE_INFO_MAX_LENGTH) {
+                add(ValidationError.DeviceInfoTooLong(Limits.DEVICE_INFO_MAX_LENGTH))
             }
         }
 }

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="current_email">Текущий email</string>
+    <string name="change_password_title">Смена пароля</string>
+    <string name="change_email_title">Смена email</string>
+    <string name="delete_account_title">Удалить аккаунт</string>
+    <string name="confirm">Подтвердить</string>
+</resources>

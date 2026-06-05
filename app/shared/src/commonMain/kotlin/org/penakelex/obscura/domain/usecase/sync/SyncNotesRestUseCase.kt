@@ -66,27 +66,23 @@ class SyncNotesRestUseCase(
         val localStates = noteRepository
             .getSyncStates(serverNotes.map { it.id })
             .associateBy { it.id }
-
         for (serverNote in serverNotes) {
             val localState = localStates[serverNote.id]
             when {
                 localState == null -> {
                     noteRepository.applyServerChanges(
-                        listOf(
-                            serverNote
-                        )
+                        listOf(serverNote)
                     )
                 }
-
                 serverNote.updatedAt > localState.updatedAt -> {
                     noteRepository.resolveConflict(
                         id = serverNote.id,
                         serverEncryptedData = serverNote.encryptedData,
                         serverCipherType = serverNote.cipherType,
-                        serverUpdatedAt = serverNote.updatedAt
+                        serverUpdatedAt = serverNote.updatedAt,
+                        serverIsDeleted = serverNote.isDeleted
                     )
                 }
-
                 else -> {
                     logger.d {
                         "Ignoring older server note ${serverNote.id} (REST)"

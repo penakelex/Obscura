@@ -24,11 +24,14 @@ interface NoteRepository {
     suspend fun markSynced(id: String)
     suspend fun applyServerChanges(notes: List<SyncableNote>)
     suspend fun getSyncStates(ids: List<String>): List<NoteSyncState>
+    suspend fun restore(id: String)
     suspend fun resolveConflict(
         id: String,
         serverEncryptedData: ByteArray,
         serverCipherType: CipherType,
-        serverUpdatedAt: Long
+        serverUpdatedAt: Long,
+        serverIsDeleted: Boolean
     )
+
     suspend fun purgeDeleted()
 }

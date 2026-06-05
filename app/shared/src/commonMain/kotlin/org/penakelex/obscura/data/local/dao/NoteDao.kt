@@ -18,6 +18,14 @@ interface NoteDao {
     )
     fun observeActiveNotes(): Flow<List<NoteEntity>>
 
+    @Query(
+        """
+        SELECT COUNT(*) FROM notes 
+        WHERE isLocalOnly = 1 AND isDeleted = 0
+        """
+    )
+    fun observeLocalOnlyCount(): Flow<Int>
+
     @Query("SELECT * FROM notes WHERE id = :id")
     suspend fun getById(id: String): NoteEntity?
 
@@ -40,6 +48,11 @@ interface NoteDao {
         """
     )
     suspend fun getSyncStates(ids: List<String>): List<NoteSyncState>
+
+    @Query(
+        "SELECT * FROM notes WHERE isLocalOnly = 1 AND isDeleted = 0"
+    )
+    suspend fun getLocalOnlyNotes(): List<NoteEntity>
 
     @Upsert
     suspend fun upsert(note: NoteEntity)
@@ -75,23 +88,53 @@ interface NoteDao {
         syncedStatus: SyncStatus = SyncStatus.SYNCED
     )
 
+    @Query(
+        """
+        UPDATE notes
+        SET isLocalOnly = 0, syncStatus = :pendingStatus, 
+            updatedAt = :timestamp
+        WHERE id = :id
+        """
+    )
+    suspend fun markAsSyncable(
+        id: String,
+        timestamp: Long,
+        pendingStatus: SyncStatus = SyncStatus.PENDING
+    )
+
+    @Query(
+        """
+        UPDATE notes
+        SET isDeleted = 0, syncStatus = :pendingStatus,
+            updatedAt = :timestamp, version = version + 1
+        WHERE id = :id
+        """
+    )
+    suspend fun restore(
+        id: String,
+        timestamp: Long,
+        pendingStatus: SyncStatus = SyncStatus.PENDING,
+    )
+
     @Transaction
     @Query(
         """
-        UPDATE notes 
+        UPDATE notes
         SET encryptedData = :encryptedData,
             cipherType = :cipherType,
             updatedAt = :updatedAt,
+            isDeleted = :isDeleted,
             syncStatus = :syncedStatus,
-            version = version + 1 
+            version = version + 1
         WHERE id = :id
-    """
+        """
     )
     suspend fun resolveConflict(
         id: String,
         encryptedData: ByteArray,
         cipherType: CipherType,
         updatedAt: Long,
+        isDeleted: Boolean,
         syncedStatus: SyncStatus = SyncStatus.SYNCED
     )
 

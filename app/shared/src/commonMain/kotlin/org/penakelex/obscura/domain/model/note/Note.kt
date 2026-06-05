@@ -9,5 +9,6 @@ data class Note(
     val cipherType: CipherType,
     val updatedAt: Long,
     val syncStatus: SyncStatus,
-    val isDeleted: Boolean
+    val isDeleted: Boolean,
+    val isLocalOnly: Boolean = false,
 )

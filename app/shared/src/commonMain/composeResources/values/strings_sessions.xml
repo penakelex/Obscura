@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="revoke">Отозвать</string>
+    <string name="revoke_session_confirm">Отозвать эту сессию? Пользователь будет вынужден войти заново на этом устройстве.</string>
+    <string name="current_session">Текущая сессия</string>
+    <string name="unknown_device">Неизвестное устройство</string>
+    <string name="session_created">Создана: %1$s</string>
+    <string name="session_expires">Истекает: %1$s</string>
+</resources>

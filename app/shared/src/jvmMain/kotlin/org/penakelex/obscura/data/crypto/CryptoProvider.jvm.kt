@@ -9,27 +9,37 @@ import com.google.crypto.tink.TinkJsonProtoKeysetFormat
 import com.google.crypto.tink.aead.AeadConfig
 import com.google.crypto.tink.aead.PredefinedAeadParameters
 import org.penakelex.obscura.domain.model.common.CipherType
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.attribute.PosixFilePermissions
+import java.security.SecureRandom
+import java.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 actual class CryptoProvider {
     private val logger = Logger.withTag(CRYPTO_LOG_TAG)
-    private val aeads: Map<CipherType, Aead>
+    private var aeads: Map<CipherType, Aead> = emptyMap()
+
+    actual val isInitialized: Boolean
+        get() = aeads.isNotEmpty()
 
     init {
         AeadConfig.register()
-        val keysetsDir = resolveKeysetsDirectory()
-        aeads = CipherType.entries.associateWith { cipher ->
-            loadOrCreateKeyset(keysetsDir, cipher)
-                .getPrimitive(
-                    RegistryConfiguration.get(),
-                    Aead::class.java
-                )
+    }
+
+    actual fun initialize(
+        masterKey: ByteArray,
+        encryptedKeysetJson: String?
+    ): String {
+        val keysetJson = if (encryptedKeysetJson != null) {
+            decryptKeysetJson(encryptedKeysetJson, masterKey)
+        } else {
+            generateNewKeysetsJson()
         }
-        logger.i {
-            "CryptoProvider initialized with ${aeads.size} ciphers"
-        }
+
+        loadAeadsFromJson(keysetJson)
+
+        return encryptedKeysetJson
+            ?: encryptKeysetJson(keysetJson, masterKey)
     }
 
     actual fun encrypt(
@@ -38,8 +48,7 @@ actual class CryptoProvider {
     ): ByteArray = try {
         aeadFor(cipherType).encrypt(plaintext, null)
     } catch (e: Exception) {
-        logger.e(e) { "Encryption failed for cipher=$cipherType" }
-        throw CryptoException("Encryption failed: ${e.message}", e)
+        throw CryptoException.EncryptionFailed(e)
     }
 
     actual fun decrypt(
@@ -48,77 +57,90 @@ actual class CryptoProvider {
     ): ByteArray = try {
         aeadFor(cipherType).decrypt(ciphertext, null)
     } catch (e: Exception) {
-        logger.e(e) { "Decryption failed for cipher=$cipherType" }
-        throw CryptoException("Decryption failed: ${e.message}", e)
+        throw CryptoException.DecryptionFailed(e)
+    }
+
+    actual fun reEncryptKeyset(
+        currentEncryptedKeyset: String,
+        currentMasterKey: ByteArray,
+        newMasterKey: ByteArray
+    ): String {
+        val keysetJson = decryptKeysetJson(currentEncryptedKeyset, currentMasterKey)
+        return encryptKeysetJson(keysetJson, newMasterKey)
+    }
+
+    actual fun reset() {
+        aeads = emptyMap()
+        logger.i { "CryptoProvider reset" }
     }
 
     private fun aeadFor(cipherType: CipherType): Aead =
-        aeads[cipherType]
-            ?: throw CryptoException("Unsupported cipher: $cipherType")
+        aeads[cipherType] ?: throw CryptoException.NotInitialized()
 
-    private fun loadOrCreateKeyset(
-        dir: File,
-        cipher: CipherType
-    ): KeysetHandle {
-        val keysetFile = File(dir, keysetFileName(cipher))
-        val access = InsecureSecretKeyAccess.get()
-
-        return if (keysetFile.exists()) {
-            logger.d { "Loading existing keyset for $cipher" }
-            val json = Files.readString(keysetFile.toPath())
-            TinkJsonProtoKeysetFormat.parseKeyset(json, access)
-        } else {
-            logger.i { "Generating new keyset for $cipher" }
-            val handle =
-                KeysetHandle.generateNew(parametersFor(cipher))
-            val json = TinkJsonProtoKeysetFormat.serializeKeyset(
-                handle,
-                access
-            )
-            Files.writeString(keysetFile.toPath(), json)
-            restrictFilePermissions(keysetFile)
-            handle
-        }
+    private fun generateNewKeysetsJson(): String {
+        logger.i { "Generating new Tink keysets" }
+        val handle = KeysetHandle.generateNew(
+            PredefinedAeadParameters.AES256_GCM
+        )
+        return TinkJsonProtoKeysetFormat.serializeKeyset(
+            handle,
+            InsecureSecretKeyAccess.get()
+        )
     }
 
-    private fun resolveKeysetsDirectory(): File {
-        val dir =
-            File(System.getProperty("user.home"), KEYSETS_DIR_PATH)
-        if (!dir.exists()) {
-            dir.mkdirs()
-            restrictFilePermissions(dir)
-        }
-        return dir
+    private fun loadAeadsFromJson(keysetJson: String) {
+        val handle = TinkJsonProtoKeysetFormat.parseKeyset(
+            keysetJson,
+            InsecureSecretKeyAccess.get()
+        )
+        val aead = handle.getPrimitive(
+            RegistryConfiguration.get(),
+            Aead::class.java
+        )
+        aeads = CipherType.entries.associateWith { aead }
+        logger.i { "CryptoProvider initialized with ${aeads.size} ciphers" }
     }
 
-    private fun restrictFilePermissions(file: File) {
-        try {
-            val path = file.toPath()
-            val fs = path.fileSystem
-            if (fs.supportedFileAttributeViews().contains("posix")) {
-                Files.setPosixFilePermissions(
-                    path,
-                    PosixFilePermissions.fromString("rw-------")
-                )
-            }
+    private fun encryptKeysetJson(json: String, masterKey: ByteArray): String {
+        val iv = ByteArray(GCM_IV_LENGTH).also { SecureRandom().nextBytes(it) }
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(
+            Cipher.ENCRYPT_MODE,
+            SecretKeySpec(masterKey, "AES"),
+            GCMParameterSpec(GCM_TAG_LENGTH, iv)
+        )
+        val encrypted = cipher.doFinal(json.toByteArray(Charsets.UTF_8))
+        return Base64.getEncoder().encodeToString(iv + encrypted)
+    }
+
+    private fun decryptKeysetJson(encrypted: String, masterKey: ByteArray): String {
+        val data = try {
+            Base64.getDecoder().decode(encrypted)
         } catch (e: Exception) {
-            logger.w(e) {
-                "Could not set POSIX permissions on ${file.name}"
-            }
+            throw CryptoException.KeysetDecryptionFailed(e)
         }
-    }
-
-    private fun keysetFileName(cipher: CipherType): String =
-        "${KEYSET_PREFIX}_${cipher.name.lowercase()}.json"
-
-    private fun parametersFor(cipher: CipherType) = when (cipher) {
-        CipherType.AES_GCM -> PredefinedAeadParameters.AES256_GCM
-        CipherType.XCHACHA20_POLY1305 ->
-            PredefinedAeadParameters.XCHACHA20_POLY1305
+        if (data.size < GCM_IV_LENGTH) {
+            throw CryptoException.KeysetDecryptionFailed(
+                IllegalStateException("Encrypted keyset too short")
+            )
+        }
+        val iv = data.copyOfRange(0, GCM_IV_LENGTH)
+        val ciphertext = data.copyOfRange(GCM_IV_LENGTH, data.size)
+        return try {
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(
+                Cipher.DECRYPT_MODE,
+                SecretKeySpec(masterKey, "AES"),
+                GCMParameterSpec(GCM_TAG_LENGTH, iv)
+            )
+            String(cipher.doFinal(ciphertext), Charsets.UTF_8)
+        } catch (e: Exception) {
+            throw CryptoException.KeysetDecryptionFailed(e)
+        }
     }
 
     private companion object {
-        const val KEYSETS_DIR_PATH = ".obscura/keysets"
-        const val KEYSET_PREFIX = "obscura_keyset"
+        const val GCM_IV_LENGTH = 12
+        const val GCM_TAG_LENGTH = 128
     }
 }

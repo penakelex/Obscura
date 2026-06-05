@@ -1,6 +1,6 @@
 package org.penakelex.obscura.data.mapper
 
-import org.penakelex.obscura.contract.rest.responses.auth.LoginResponse
+import org.penakelex.obscura.contract.rest.responses.auth.SessionResponse
 import org.penakelex.obscura.contract.rest.responses.auth.ProfileResponse
 import org.penakelex.obscura.contract.rest.responses.auth.SessionInfo as RestSessionInfo
 import org.penakelex.obscura.domain.model.auth.SessionData
@@ -8,15 +8,17 @@ import org.penakelex.obscura.domain.model.auth.SessionInfo
 import org.penakelex.obscura.domain.model.auth.UserProfile
 
 object AuthMapper {
-    fun LoginResponse.toSessionData(): SessionData = SessionData(
+    fun SessionResponse.toSessionData(): SessionData = SessionData(
         token = token,
         userId = userId,
-        expiresAt = expiresAt
+        expiresAt = expiresAt,
+        encryptedKeyset = keyset?.encryptedKeyset,
+        salt = keyset?.salt,
     )
 
     fun ProfileResponse.toDomain(): UserProfile = UserProfile(
         userId = userId,
-        email = email
+        email = email,
     )
 
     fun RestSessionInfo.toDomain(): SessionInfo = SessionInfo(
@@ -24,7 +26,7 @@ object AuthMapper {
         deviceInfo = deviceInfo,
         createdAt = createdAt,
         expiresAt = expiresAt,
-        isCurrent = isCurrent
+        isCurrent = isCurrent,
     )
 
     fun List<RestSessionInfo>.toDomainList(): List<SessionInfo> =

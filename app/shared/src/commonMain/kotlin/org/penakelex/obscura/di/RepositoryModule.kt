@@ -12,17 +12,19 @@ import org.penakelex.obscura.domain.repository.AuthRepository
 import org.penakelex.obscura.domain.repository.NoteRepository
 
 val repositoryModule: Module = module {
-    single<NoteRepository> {
-        NoteRepositoryImpl(
-            noteDao = get<NoteDao>(),
-            cryptoProvider = get<CryptoProvider>(),
-        )
-    }
-
     single<AuthRepository> {
         AuthRepositoryImpl(
             authApiClient = get<AuthApiClient>(),
             tokenStorage = get<TokenStorage>(),
+            cryptoProvider = get<CryptoProvider>(),
+        )
+    }
+
+    single<NoteRepository> {
+        NoteRepositoryImpl(
+            noteDao = get<NoteDao>(),
+            cryptoProvider = get<CryptoProvider>(),
+            authRepository = get()
         )
     }
 }

@@ -10,6 +10,7 @@ import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.penakelex.obscura.config.ServerConfig
 import org.penakelex.obscura.db.tables.Notes
 import org.penakelex.obscura.db.tables.Sessions
+import org.penakelex.obscura.db.tables.UserKeysets
 import org.penakelex.obscura.db.tables.Users
 import org.slf4j.LoggerFactory
 import kotlin.time.Clock
@@ -54,7 +55,7 @@ object DatabaseManager {
             try {
                 val statements = transaction(database) {
                     MigrationUtils.statementsRequiredForDatabaseMigration(
-                        Users, Sessions, Notes
+                        Users, Sessions, Notes, UserKeysets,
                     )
                 }
 

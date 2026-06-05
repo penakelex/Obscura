@@ -16,6 +16,7 @@ import org.penakelex.obscura.domain.model.note.NoteSyncState
 import org.penakelex.obscura.domain.model.note.NotesResult
 import org.penakelex.obscura.domain.model.common.SyncStatus
 import org.penakelex.obscura.domain.model.note.SyncableNote
+import org.penakelex.obscura.domain.repository.AuthRepository
 import org.penakelex.obscura.domain.repository.NoteRepository
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -24,9 +25,9 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class NoteRepositoryImpl(
     private val noteDao: NoteDao,
-    private val cryptoProvider: CryptoProvider
+    private val cryptoProvider: CryptoProvider,
+    private val authRepository: AuthRepository,
 ) : NoteRepository {
-
     private val logger = Logger.withTag(LOG_TAG)
 
     override fun observeNotes(): Flow<NotesResult> =
@@ -61,26 +62,28 @@ class NoteRepositoryImpl(
 
     override suspend fun create(
         content: String,
-        cipherType: CipherType
+        cipherType: CipherType,
     ): String {
+        ensureInitialized()
         val id = Uuid.random().toString()
         val encryptedData = cryptoProvider.encrypt(
             content.encodeToByteArray(),
-            cipherType
+            cipherType,
         )
+        val isLocalOnly = !authRepository.isLoggedIn()
 
         val entity = NoteEntity(
             id = id,
             encryptedData = encryptedData,
             cipherType = cipherType,
             updatedAt = Clock.System.now().toEpochMilliseconds(),
-            syncStatus = SyncStatus.PENDING,
+            syncStatus = if (isLocalOnly) SyncStatus.SYNCED else SyncStatus.PENDING,
             version = 1,
-            isDeleted = false
+            isDeleted = false,
+            isLocalOnly = isLocalOnly,
         )
-
         noteDao.upsert(entity)
-        logger.d { "Created note: $id (cipher=$cipherType)" }
+        logger.d { "Created note: $id (cipher=$cipherType, localOnly=$isLocalOnly)" }
         return id
     }
 
@@ -89,6 +92,8 @@ class NoteRepositoryImpl(
         content: String,
         cipherType: CipherType
     ) {
+        ensureInitialized()
+
         val existing = noteDao.getById(id)
             ?: throw ObscuraDomainException.NoteNotFoundException(id)
 
@@ -118,7 +123,9 @@ class NoteRepositoryImpl(
     }
 
     override suspend fun getPendingChanges(): List<SyncableNote> =
-        noteDao.getPendingChanges().toSyncableNotes()
+        noteDao.getPendingChanges()
+            .filter { !it.isLocalOnly }
+            .toSyncableNotes()
 
     override suspend fun markSynced(id: String) {
         noteDao.markSynced(
@@ -133,23 +140,41 @@ class NoteRepositoryImpl(
     }
 
     override suspend fun getSyncStates(
-        ids: List<String>
+        ids: List<String>,
     ): List<NoteSyncState> = noteDao.getSyncStates(ids)
+
+    override suspend fun restore(id: String) {
+        val existing = noteDao.getById(id)
+            ?: throw ObscuraDomainException.NoteNotFoundException(id)
+
+        if (!existing.isDeleted) {
+            logger.d { "Note $id is not deleted, skipping restore" }
+            return
+        }
+
+        noteDao.restore(
+            id = id,
+            timestamp = Clock.System.now().toEpochMilliseconds()
+        )
+        logger.d { "Restored note: $id" }
+    }
 
     override suspend fun resolveConflict(
         id: String,
         serverEncryptedData: ByteArray,
         serverCipherType: CipherType,
-        serverUpdatedAt: Long
+        serverUpdatedAt: Long,
+        serverIsDeleted: Boolean
     ) {
         noteDao.resolveConflict(
             id = id,
             encryptedData = serverEncryptedData,
             cipherType = serverCipherType,
-            updatedAt = serverUpdatedAt
+            updatedAt = serverUpdatedAt,
+            isDeleted = serverIsDeleted
         )
         logger.i {
-            "Conflict resolved for note: $id (accepted server version)"
+            "Conflict resolved for note: $id (accepted server version, deleted=$serverIsDeleted)"
         }
     }
 
@@ -157,11 +182,19 @@ class NoteRepositoryImpl(
         noteDao.purgeDeleted()
     }
 
+    private fun ensureInitialized() {
+        if (!cryptoProvider.isInitialized) {
+            throw CryptoException.NotInitialized()
+        }
+    }
+
     private fun NoteEntity.toNote(): Note {
         val decryptedContent = try {
             cryptoProvider.decrypt(encryptedData, cipherType)
                 .decodeToString()
         } catch (e: CryptoException) {
+            e.printStackTrace()
+
             throw ObscuraDomainException.DecryptionException(
                 noteId = id,
                 cause = e
@@ -174,7 +207,8 @@ class NoteRepositoryImpl(
             cipherType = cipherType,
             updatedAt = updatedAt,
             syncStatus = syncStatus,
-            isDeleted = isDeleted
+            isDeleted = isDeleted,
+            isLocalOnly = isLocalOnly,
         )
     }
 

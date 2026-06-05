@@ -29,6 +29,7 @@ actual class TokenStorage {
             System.getProperty("user.home"),
             StorageConfig.Desktop.APP_DIR_NAME
         )
+
         if (!dir.exists()) {
             dir.mkdirs()
             restrictPermissions(dir)
@@ -37,7 +38,8 @@ actual class TokenStorage {
     }
 
     private val _sessionFlow = MutableStateFlow(loadSync())
-    actual val sessionFlow: StateFlow<SessionData?> = _sessionFlow.asStateFlow()
+    actual val sessionFlow: StateFlow<SessionData?> =
+        _sessionFlow.asStateFlow()
 
     actual suspend fun save(session: SessionData) = mutex.withLock {
         withContext(Dispatchers.IO) {

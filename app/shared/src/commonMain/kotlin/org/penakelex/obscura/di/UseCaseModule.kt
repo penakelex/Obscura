@@ -2,19 +2,76 @@ package org.penakelex.obscura.di
 
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import org.penakelex.obscura.data.crypto.CryptoProvider
 import org.penakelex.obscura.domain.repository.AuthRepository
 import org.penakelex.obscura.domain.repository.NoteRepository
-import org.penakelex.obscura.domain.usecase.auth.*
-import org.penakelex.obscura.domain.usecase.note.*
+import org.penakelex.obscura.domain.usecase.auth.AccountBootstrapUseCase
+import org.penakelex.obscura.domain.usecase.auth.ChangeEmailUseCase
+import org.penakelex.obscura.domain.usecase.auth.ChangePasswordUseCase
+import org.penakelex.obscura.domain.usecase.auth.DeleteAccountUseCase
+import org.penakelex.obscura.domain.usecase.auth.GetProfileUseCase
+import org.penakelex.obscura.domain.usecase.auth.ListSessionsUseCase
+import org.penakelex.obscura.domain.usecase.auth.LoginUseCase
+import org.penakelex.obscura.domain.usecase.auth.LogoutAllUseCase
+import org.penakelex.obscura.domain.usecase.auth.LogoutUseCase
+import org.penakelex.obscura.domain.usecase.auth.MigrateGuestNotesUseCase
+import org.penakelex.obscura.domain.usecase.auth.ObserveSessionUseCase
+import org.penakelex.obscura.domain.usecase.auth.RegisterUseCase
+import org.penakelex.obscura.domain.usecase.auth.RevokeSessionUseCase
+import org.penakelex.obscura.domain.usecase.note.CreateNoteUseCase
+import org.penakelex.obscura.domain.usecase.note.DeleteNoteUseCase
+import org.penakelex.obscura.domain.usecase.note.GetNoteUseCase
+import org.penakelex.obscura.domain.usecase.note.ObserveNotesUseCase
+import org.penakelex.obscura.domain.usecase.note.UpdateNoteUseCase
 
 val useCaseModule: Module = module {
-    factory { LoginUseCase(authRepository = get<AuthRepository>()) }
     factory {
-        RegisterUseCase(authRepository = get<AuthRepository>())
+        AccountBootstrapUseCase(
+            tokenStorage = get(),
+            accountKeyStorage = get(),
+            cryptoProvider = get(),
+        )
     }
-    factory { LogoutUseCase(authRepository = get<AuthRepository>()) }
+
     factory {
-        LogoutAllUseCase(authRepository = get<AuthRepository>())
+        MigrateGuestNotesUseCase(
+            noteDao = get(),
+            cryptoProvider = get<CryptoProvider>(),
+            guestCryptoManager = get(),
+        )
+    }
+
+    factory {
+        LoginUseCase(
+            authRepository = get<AuthRepository>(),
+            cryptoProvider = get<CryptoProvider>(),
+            keyDeriver = get(),
+            migrateGuestNotesUseCase = get(),
+            accountKeyStorage = get(),
+        )
+    }
+    factory {
+        RegisterUseCase(
+            authRepository = get<AuthRepository>(),
+            cryptoProvider = get<CryptoProvider>(),
+            keyDeriver = get(),
+            migrateGuestNotesUseCase = get(),
+            accountKeyStorage = get(),
+        )
+    }
+    factory {
+        LogoutUseCase(
+            authRepository = get<AuthRepository>(),
+            guestCryptoManager = get(),
+            accountKeyStorage = get(),
+        )
+    }
+    factory {
+        LogoutAllUseCase(
+            authRepository = get<AuthRepository>(),
+            guestCryptoManager = get(),
+            accountKeyStorage = get(),
+        )
     }
     factory {
         ObserveSessionUseCase(authRepository = get<AuthRepository>())
@@ -23,13 +80,25 @@ val useCaseModule: Module = module {
         GetProfileUseCase(authRepository = get<AuthRepository>())
     }
     factory {
-        ChangePasswordUseCase(authRepository = get<AuthRepository>())
+        ChangePasswordUseCase(
+            authRepository = get<AuthRepository>(),
+            cryptoProvider = get<CryptoProvider>(),
+            keyDeriver = get(),
+            accountKeyStorage = get(),
+        )
     }
     factory {
-        ChangeEmailUseCase(authRepository = get<AuthRepository>())
+        ChangeEmailUseCase(
+            authRepository = get<AuthRepository>(),
+            keyDeriver = get(),
+        )
     }
     factory {
-        DeleteAccountUseCase(authRepository = get<AuthRepository>())
+        DeleteAccountUseCase(
+            authRepository = get<AuthRepository>(),
+            keyDeriver = get(),
+            accountKeyStorage = get(),
+        )
     }
     factory {
         ListSessionsUseCase(authRepository = get<AuthRepository>())

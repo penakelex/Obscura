@@ -1,6 +1,9 @@
 package org.penakelex.obscura.presentation.components.markdown
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,10 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import org.penakelex.obscura.presentation.theme.CodeTypography
 import org.penakelex.obscura.presentation.theme.ObscuraDimens
 
@@ -49,33 +53,47 @@ fun MarkdownEditor(
                 )
             }
         }
-
         Spacer(Modifier.height(ObscuraDimens.Padding.s))
-
         when (mode) {
             MarkdownEditorMode.EDITOR -> {
-                OutlinedTextField(
-                    value = content,
-                    onValueChange = onContentChange,
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = ObscuraDimens.Padding.m),
-                    enabled = enabled,
-                    textStyle = CodeTypography.editor,
-                    placeholder = {
+                        .padding(horizontal = ObscuraDimens.Padding.m)
+                        .border(
+                            width = ObscuraDimens.Padding.xs / 4,
+                            color = MaterialTheme.colorScheme.outline,
+                            shape = MaterialTheme.shapes.medium,
+                        )
+                        .background(
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = MaterialTheme.shapes.medium,
+                        )
+                        .padding(ObscuraDimens.Padding.m),
+                ) {
+                    if (content.isEmpty()) {
                         Text(
                             text = placeholder,
                             style = CodeTypography.editor,
                             color = MaterialTheme.colorScheme
-                                .onSurfaceVariant.copy(alpha = 0.6f),
+                                .onSurfaceVariant
+                                .copy(alpha = 0.6f),
                         )
-                    },
-                    shape = MaterialTheme.shapes.medium,
-                    singleLine = false,
-                    minLines = 10,
-                )
+                    }
+                    BasicTextField(
+                        value = content,
+                        onValueChange = onContentChange,
+                        modifier = Modifier.fillMaxSize(),
+                        enabled = enabled,
+                        textStyle = CodeTypography.editor.copy(
+                            color = MaterialTheme.colorScheme.onSurface,
+                        ),
+                        cursorBrush = SolidColor(
+                            MaterialTheme.colorScheme.primary,
+                        ),
+                    )
+                }
             }
-
             MarkdownEditorMode.PREVIEW -> {
                 MarkdownRenderer(
                     content = content,
@@ -85,33 +103,49 @@ fun MarkdownEditor(
                         .padding(ObscuraDimens.Padding.m),
                 )
             }
-
             MarkdownEditorMode.SPLIT -> {
                 Row(modifier = Modifier.fillMaxSize()) {
-                    OutlinedTextField(
-                        value = content,
-                        onValueChange = onContentChange,
+                    Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize()
                             .padding(
                                 start = ObscuraDimens.Padding.m,
                                 end = ObscuraDimens.Padding.xs,
-                            ),
-                        enabled = enabled,
-                        textStyle = CodeTypography.editor,
-                        placeholder = {
+                            )
+                            .border(
+                                width = ObscuraDimens.Padding.xs / 4,
+                                color = MaterialTheme.colorScheme.outline,
+                                shape = MaterialTheme.shapes.medium,
+                            )
+                            .background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = MaterialTheme.shapes.medium,
+                            )
+                            .padding(ObscuraDimens.Padding.m),
+                    ) {
+                        if (content.isEmpty()) {
                             Text(
                                 text = placeholder,
                                 style = CodeTypography.editor,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme
+                                    .onSurfaceVariant
                                     .copy(alpha = 0.6f),
                             )
-                        },
-                        shape = MaterialTheme.shapes.medium,
-                        singleLine = false,
-                    )
-
+                        }
+                        BasicTextField(
+                            value = content,
+                            onValueChange = onContentChange,
+                            modifier = Modifier.fillMaxSize(),
+                            enabled = enabled,
+                            textStyle = CodeTypography.editor.copy(
+                                color = MaterialTheme.colorScheme.onSurface,
+                            ),
+                            cursorBrush = SolidColor(
+                                MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    }
                     MarkdownRenderer(
                         content = content,
                         modifier = Modifier

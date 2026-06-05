@@ -31,6 +31,7 @@ object ErrorCodes {
         const val USER_NOT_FOUND = "RES_USER_NOT_FOUND"
         const val NOTE_NOT_FOUND = "RES_NOTE_NOT_FOUND"
         const val SESSION_NOT_FOUND = "RES_SESSION_NOT_FOUND"
+        const val KEYSET_NOT_FOUND = "RES_KEYSET_NOT_FOUND"
     }
 
     object Account {

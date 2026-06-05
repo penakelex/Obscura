@@ -22,4 +22,9 @@ sealed class NotFoundException(
         errorCode = ErrorCodes.Resources.NOTE_NOT_FOUND,
         message = "Note with id '$noteId' not found"
     )
+
+    class KeysetNotFound(userId: String) : NotFoundException(
+        errorCode = ErrorCodes.Resources.KEYSET_NOT_FOUND,
+        message = "Keyset for user '$userId' not found"
+    )
 }

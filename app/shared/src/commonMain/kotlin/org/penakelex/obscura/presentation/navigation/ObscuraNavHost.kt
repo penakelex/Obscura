@@ -1,34 +1,43 @@
 package org.penakelex.obscura.presentation.navigation
 
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import org.koin.compose.koinInject
 import org.penakelex.obscura.domain.model.auth.SessionState
 import org.penakelex.obscura.domain.usecase.auth.ObserveSessionUseCase
+import org.penakelex.obscura.presentation.components.common.ObscuraSnackbarHostState
+import org.penakelex.obscura.presentation.screens.account.AccountScreen
+import org.penakelex.obscura.presentation.screens.auth.login.LoginScreen
+import org.penakelex.obscura.presentation.screens.auth.register.RegisterScreen
+import org.penakelex.obscura.presentation.screens.notes.editor.NoteEditorScreen
+import org.penakelex.obscura.presentation.screens.notes.list.NotesListScreen
+import org.penakelex.obscura.presentation.screens.sessions.SessionsScreen
+import org.penakelex.obscura.presentation.screens.settings.SettingsScreen
+import org.penakelex.obscura.presentation.screens.splash.SplashScreen
 
 @Composable
 fun ObscuraNavHost(
-    snackbarHostState: SnackbarHostState,
+    snackbarHostState: ObscuraSnackbarHostState,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
+    navigator: Navigator = koinInject(),
     observeSession: ObserveSessionUseCase = koinInject(),
 ) {
     val sessionState by observeSession().collectAsState()
 
+    navController.HandleNavigationEvents(navigator)
+
     val startDestination: NavRoute = when (sessionState) {
         is SessionState.Loading -> NavRoute.Splash
-        is SessionState.Unauthenticated -> NavRoute.Auth.Login
+        is SessionState.Unauthenticated -> NavRoute.Main.NotesList
         is SessionState.Authenticated -> NavRoute.Main.NotesList
     }
 
@@ -37,80 +46,75 @@ fun ObscuraNavHost(
         startDestination = startDestination,
         modifier = modifier,
     ) {
-        splashScreen(navController)
-        authGraph(navController, snackbarHostState)
-        mainGraph(navController, snackbarHostState)
+        composable<NavRoute.Splash> {
+            SplashScreen()
+        }
+        composable<NavRoute.Auth.Login> {
+            LoginScreen(snackbarHostState = snackbarHostState)
+        }
+        composable<NavRoute.Auth.Register> {
+            RegisterScreen(snackbarHostState = snackbarHostState)
+        }
+        composable<NavRoute.Main.NotesList> {
+            NotesListScreen(snackbarHostState = snackbarHostState)
+        }
+        composable<NavRoute.Main.NoteEditor> { backStackEntry ->
+            val route: NavRoute.Main.NoteEditor = backStackEntry.toRoute()
+            NoteEditorScreen(
+                noteId = route.noteId,
+                snackbarHostState = snackbarHostState,
+            )
+        }
+        composable<NavRoute.Main.Settings> {
+            SettingsScreen(
+                snackbarHostState = snackbarHostState,
+                onBackClick = { navController.popBackStack() },
+            )
+        }
+        composable<NavRoute.Main.Account> {
+            AccountScreen(
+                snackbarHostState = snackbarHostState,
+                onBackClick = { navController.popBackStack() },
+            )
+        }
+        composable<NavRoute.Main.Sessions> {
+            SessionsScreen(
+                snackbarHostState = snackbarHostState,
+                onBackClick = { navController.popBackStack() },
+            )
+        }
     }
 
     LaunchedEffect(sessionState) {
-        if (sessionState is SessionState.Unauthenticated) {
-            val currentRoute = navController.currentDestination?.route
-            if (currentRoute != null && !currentRoute.contains("Auth")) {
-                navController.navigate(NavRoute.Auth.Login) {
-                    popUpTo(navController.graph.startDestinationId) {
-                        inclusive = true
+        val currentRoute = navController.currentDestination?.route
+        when (sessionState) {
+            is SessionState.Authenticated -> {
+                val isInAuth = currentRoute?.let { route ->
+                    route.contains("Login") || route.contains("Register")
+                } == true
+                if (isInAuth) {
+                    navigator.navigate(NavRoute.Main.NotesList) {
+                        popUpTo(NavRoute.Auth.Login) { inclusive = true }
+                        popUpTo(NavRoute.Auth.Register) { inclusive = true }
+                        launchSingleTop = true
                     }
-                    launchSingleTop = true
                 }
             }
-        }
-    }
-}
-
-private fun NavGraphBuilder.splashScreen(
-    navController: NavHostController,
-) {
-    composable<NavRoute.Splash> {
-        // TODO: SplashScreen()
-    }
-}
-
-private fun NavGraphBuilder.authGraph(
-    navController: NavHostController,
-    snackbarHostState: SnackbarHostState,
-) {
-    navigation<NavRoute.Auth>(
-        startDestination = NavRoute.Auth.Login,
-    ) {
-        composable<NavRoute.Auth.Login> {
-            // TODO: LoginScreen(snackbarHostState = snackbarHostState)
-        }
-
-        composable<NavRoute.Auth.Register> {
-            // TODO: RegisterScreen(snackbarHostState = snackbarHostState)
-        }
-    }
-}
-
-private fun NavGraphBuilder.mainGraph(
-    navController: NavHostController,
-    snackbarHostState: SnackbarHostState,
-) {
-    navigation<NavRoute.Main>(
-        startDestination = NavRoute.Main.NotesList,
-    ) {
-        composable<NavRoute.Main.NotesList> {
-            // TODO: NotesListScreen(snackbarHostState = snackbarHostState)
-        }
-
-        composable<NavRoute.Main.NoteEditor> { backStackEntry ->
-            val route: NavRoute.Main.NoteEditor = backStackEntry.toRoute()
-            // TODO: NoteEditorScreen(
-            //   noteId = route.noteId,
-            //   snackbarHostState = snackbarHostState
-            // )
-        }
-
-        composable<NavRoute.Main.Settings> {
-            // TODO: SettingsScreen(snackbarHostState = snackbarHostState)
-        }
-
-        composable<NavRoute.Main.Account> {
-            // TODO: AccountScreen(snackbarHostState = snackbarHostState)
-        }
-
-        composable<NavRoute.Main.Sessions> {
-            // TODO: SessionsScreen(snackbarHostState = snackbarHostState)
+            is SessionState.Unauthenticated -> {
+                val isInProtectedScreen = currentRoute?.let { route ->
+                    route.contains("Settings") ||
+                            route.contains("Account") ||
+                            route.contains("Sessions") ||
+                            route.contains("NoteEditor")
+                } == true
+                if (isInProtectedScreen) {
+                    navigator.navigate(NavRoute.Main.NotesList) {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+            SessionState.Loading -> {  }
         }
     }
 }

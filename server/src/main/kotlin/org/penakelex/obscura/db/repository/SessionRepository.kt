@@ -38,6 +38,18 @@ class SessionRepository(
         userId: Uuid,
         deviceInfo: String?
     ): SessionCreationResult = withContext(Dispatchers.IO) {
+        if (!deviceInfo.isNullOrBlank()) {
+            suspendTransaction {
+                Sessions.update({
+                    (Sessions.userId eq userId) and
+                            (Sessions.deviceInfo eq deviceInfo) and
+                            (Sessions.isActive eq true)
+                }) {
+                    it[isActive] = false
+                }
+            }
+        }
+
         val rawToken = generateSecureToken(sessionConfig.tokenLengthBytes)
         val tokenHash = hashToken(rawToken)
         val now = Clock.System.now()
@@ -53,6 +65,7 @@ class SessionRepository(
                 it[isActive] = true
             }
         }
+
         SessionCreationResult(rawToken, expiresAt)
     }
 

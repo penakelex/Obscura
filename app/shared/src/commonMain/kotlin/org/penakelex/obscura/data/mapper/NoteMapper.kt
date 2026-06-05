@@ -11,7 +11,8 @@ object NoteMapper {
         updatedAt = updatedAt,
         isDeleted = isDeleted,
         version = version,
-        syncStatus = syncStatus
+        syncStatus = syncStatus,
+        isLocalOnly = isLocalOnly,
     )
 
     fun SyncableNote.toEntity(): NoteEntity = NoteEntity(
@@ -21,7 +22,8 @@ object NoteMapper {
         updatedAt = updatedAt,
         syncStatus = syncStatus,
         version = version,
-        isDeleted = isDeleted
+        isDeleted = isDeleted,
+        isLocalOnly = isLocalOnly,
     )
 
     fun List<NoteEntity>.toSyncableNotes(): List<SyncableNote> =

@@ -2,12 +2,13 @@ package org.penakelex.obscura.data.remote.config
 
 object NetworkConfig {
     object Rest {
-        const val HOST: String = "localhost"
+        val HOST: String = PlatformConfig.apiHost
         const val PORT: Int = 8080
-        const val BASE_URL: String = "http://$HOST:$PORT"
+        val BASE_URL: String = "http://$HOST:$PORT"
         const val TIMEOUT_MILLIS: Long = 15_000L
 
         object Paths {
+            const val AUTH_CHALLENGE = "/api/auth/challenge"
             const val AUTH_REGISTER = "/api/auth/register"
             const val AUTH_LOGIN = "/api/auth/login"
             const val AUTH_LOGOUT = "/api/auth/logout"
@@ -25,7 +26,7 @@ object NetworkConfig {
     }
 
     object Grpc {
-        const val HOST: String = "localhost"
+        val HOST: String = PlatformConfig.apiHost
         const val PORT: Int = 50051
         const val USE_TLS: Boolean = false
         const val MAX_INBOUND_MESSAGE_SIZE: Int = 4 * 1024 * 1024

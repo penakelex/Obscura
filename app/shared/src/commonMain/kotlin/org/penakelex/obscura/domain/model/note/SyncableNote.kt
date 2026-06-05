@@ -10,27 +10,35 @@ data class SyncableNote(
     val updatedAt: Long,
     val isDeleted: Boolean,
     val version: Int,
-    val syncStatus: SyncStatus
+    val syncStatus: SyncStatus,
+    val isLocalOnly: Boolean = false,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is SyncableNote) return false
-        return id == other.id &&
-                encryptedData.contentEquals(other.encryptedData) &&
-                cipherType == other.cipherType &&
-                updatedAt == other.updatedAt &&
-                isDeleted == other.isDeleted &&
-                version == other.version &&
-                syncStatus == other.syncStatus
+        if (javaClass != other?.javaClass) return false
+
+        other as SyncableNote
+
+        if (updatedAt != other.updatedAt) return false
+        if (isDeleted != other.isDeleted) return false
+        if (version != other.version) return false
+        if (isLocalOnly != other.isLocalOnly) return false
+        if (id != other.id) return false
+        if (!encryptedData.contentEquals(other.encryptedData)) return false
+        if (cipherType != other.cipherType) return false
+        if (syncStatus != other.syncStatus) return false
+
+        return true
     }
 
     override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + encryptedData.contentHashCode()
-        result = 31 * result + cipherType.hashCode()
-        result = 31 * result + updatedAt.hashCode()
+        var result = updatedAt.hashCode()
         result = 31 * result + isDeleted.hashCode()
         result = 31 * result + version
+        result = 31 * result + isLocalOnly.hashCode()
+        result = 31 * result + id.hashCode()
+        result = 31 * result + encryptedData.contentHashCode()
+        result = 31 * result + cipherType.hashCode()
         result = 31 * result + syncStatus.hashCode()
         return result
     }

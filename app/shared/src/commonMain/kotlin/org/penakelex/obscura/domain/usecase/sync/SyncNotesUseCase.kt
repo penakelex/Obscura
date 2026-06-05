@@ -82,7 +82,6 @@ class SyncNotesUseCase(
         val localStates = noteRepository
             .getSyncStates(result.serverChanges.map { it.id })
             .associateBy { it.id }
-
         for (serverNote in result.serverChanges) {
             val localState = localStates[serverNote.id]
             when {
@@ -93,16 +92,15 @@ class SyncNotesUseCase(
                         )
                     )
                 }
-
                 serverNote.updatedAt > localState.updatedAt -> {
                     noteRepository.resolveConflict(
                         id = serverNote.id,
                         serverEncryptedData = serverNote.encryptedData,
                         serverCipherType = serverNote.cipherType,
-                        serverUpdatedAt = serverNote.updatedAt
+                        serverUpdatedAt = serverNote.updatedAt,
+                        serverIsDeleted = serverNote.isDeleted
                     )
                 }
-
                 else -> {
                     logger.d {
                         "Ignoring older server note ${serverNote.id}"

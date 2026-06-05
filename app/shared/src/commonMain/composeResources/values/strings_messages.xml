@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="msg_login_successful">Вход выполнен успешно</string>
+    <string name="msg_register_successful">Регистрация завершена</string>
+    <string name="msg_logout_successful">Вы вышли из аккаунта</string>
+    <string name="msg_sync_successful">Синхронизация завершена</string>
+    <string name="msg_note_saved">Заметка сохранена</string>
+    <string name="msg_note_restored">Заметка восстановлена</string>
+    <string name="msg_notes_deleted_one">Заметка удалена</string>
+    <string name="msg_notes_deleted_many">Удалено заметок: %1$d</string>
+    <string name="msg_password_changed">Пароль изменён</string>
+    <string name="msg_email_changed">Email изменён</string>
+    <string name="msg_account_deleted">Аккаунт удалён</string>
+    <string name="msg_session_revoked">Сессия отозвана</string>
+
+    <string name="msg_corrupted_notes_skipped">Пропущено повреждённых заметок: %1$d</string>
+    <string name="msg_password_recovery_unavailable">Восстановление пароля недоступно в E2E-системе</string>
+</resources>

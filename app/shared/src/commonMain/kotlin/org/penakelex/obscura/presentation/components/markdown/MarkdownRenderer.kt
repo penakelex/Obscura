@@ -57,6 +57,7 @@ fun MarkdownRenderer(
         modifier = modifier.fillMaxWidth(),
         referenceLinkHandler = object : ReferenceLinkHandler {
             private val references = mutableMapOf<String, String>()
+
             override fun find(label: String): String =
                 references[label].orEmpty()
 

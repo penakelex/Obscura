@@ -11,12 +11,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.penakelex.obscura.domain.model.common.CipherType
 import org.penakelex.obscura.domain.model.settings.AppSettings
+import org.penakelex.obscura.domain.model.settings.ThemeMode
 
 private val Context.settingsDataStore by preferencesDataStore(
     name = "obscura_settings",
 )
 
 actual class SettingsStorage(private val context: Context) {
+    private val themeKey = intPreferencesKey("theme_mode")
     private val cipherKey = intPreferencesKey("default_cipher_type")
     private val autoSyncKey = booleanPreferencesKey("is_auto_sync")
     private val lastSyncKey = longPreferencesKey("last_sync_timestamp")
@@ -24,6 +26,7 @@ actual class SettingsStorage(private val context: Context) {
     actual fun observe(): Flow<AppSettings> =
         context.settingsDataStore.data.map { prefs ->
             AppSettings(
+                themeMode = ThemeMode.fromId(prefs[themeKey] ?: ThemeMode.DEFAULT.id),
                 defaultCipherType = CipherType.fromIdOrFallback(
                     prefs[cipherKey] ?: CipherType.DEFAULT.id
                 ),
@@ -37,6 +40,7 @@ actual class SettingsStorage(private val context: Context) {
 
     actual suspend fun save(settings: AppSettings) {
         context.settingsDataStore.edit { prefs ->
+            prefs[themeKey] = settings.themeMode.id
             prefs[cipherKey] = settings.defaultCipherType.id
             prefs[autoSyncKey] = settings.isAutoSyncEnabled
             prefs[lastSyncKey] = settings.lastSyncTimestamp

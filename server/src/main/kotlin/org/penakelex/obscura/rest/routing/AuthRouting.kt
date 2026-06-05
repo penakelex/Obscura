@@ -12,8 +12,8 @@ import io.ktor.server.routing.route
 import org.penakelex.obscura.contract.rest.requests.account.ChangeEmailRequest
 import org.penakelex.obscura.contract.rest.requests.account.ChangePasswordRequest
 import org.penakelex.obscura.contract.rest.requests.account.DeleteAccountRequest
-import org.penakelex.obscura.contract.rest.requests.auth.LoginRequest
-import org.penakelex.obscura.contract.rest.requests.auth.RegisterRequest
+import org.penakelex.obscura.contract.rest.requests.auth.AuthRequest
+import org.penakelex.obscura.contract.rest.requests.auth.ChallengeRequest
 import org.penakelex.obscura.contract.rest.responses.auth.LogoutAllResponse
 import org.penakelex.obscura.exception.resource.NotFoundException
 import org.penakelex.obscura.exception.validation.ValidationException
@@ -27,14 +27,20 @@ import kotlin.uuid.Uuid
 fun Route.authRouting(authService: AuthService) {
     rateLimited {
         route("/api/auth") {
+            post("/challenge") {
+                val request = call.receive<ChallengeRequest>()
+                val response = authService.getChallenge(request.email)
+                call.respond(HttpStatusCode.OK, response)
+            }
+
             post("/register") {
-                val request = call.receive<RegisterRequest>()
+                val request = call.receive<AuthRequest>()
                 val response = authService.register(request)
                 call.respond(HttpStatusCode.Created, response)
             }
 
             post("/login") {
-                val request = call.receive<LoginRequest>()
+                val request = call.receive<AuthRequest>()
                 val response = authService.login(request)
                 call.respond(HttpStatusCode.OK, response)
             }
@@ -45,7 +51,6 @@ fun Route.authRouting(authService: AuthService) {
                     val response = authService.logout(session.id)
                     call.respond(HttpStatusCode.OK, response)
                 }
-
                 post("/all") {
                     val session = call.authenticate()
                     val revokedCount =
@@ -66,11 +71,10 @@ fun Route.authRouting(authService: AuthService) {
             put("/password") {
                 val session = call.authenticate()
                 val request = call.receive<ChangePasswordRequest>()
-                val response =
-                    authService.changePassword(
-                        session.userId,
-                        request
-                    )
+                val response = authService.changePassword(
+                    session.userId,
+                    request
+                )
                 call.respond(HttpStatusCode.OK, response)
             }
 
@@ -97,7 +101,6 @@ fun Route.authRouting(authService: AuthService) {
                         .listSessions(session.userId, session.id)
                     call.respond(HttpStatusCode.OK, response)
                 }
-
                 delete("/{sessionId}") {
                     val session = call.authenticate()
                     val sessionIdString = call.parameters["sessionId"]

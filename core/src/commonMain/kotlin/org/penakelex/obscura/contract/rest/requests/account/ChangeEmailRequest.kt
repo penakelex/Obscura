@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ChangeEmailRequest(
-    val currentPassword: String,
-    val newEmail: String
+    val currentAuthHash: String,
+    val newEmail: String,
 )

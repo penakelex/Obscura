@@ -9,9 +9,10 @@ import kotlinx.serialization.json.Json
 import org.penakelex.obscura.contract.rest.requests.account.ChangeEmailRequest
 import org.penakelex.obscura.contract.rest.requests.account.ChangePasswordRequest
 import org.penakelex.obscura.contract.rest.requests.account.DeleteAccountRequest
-import org.penakelex.obscura.contract.rest.requests.auth.LoginRequest
-import org.penakelex.obscura.contract.rest.requests.auth.RegisterRequest
-import org.penakelex.obscura.contract.rest.responses.auth.LoginResponse
+import org.penakelex.obscura.contract.rest.requests.auth.AuthRequest
+import org.penakelex.obscura.contract.rest.requests.auth.ChallengeRequest
+import org.penakelex.obscura.contract.rest.responses.auth.ChallengeResponse
+import org.penakelex.obscura.contract.rest.responses.auth.SessionResponse
 import org.penakelex.obscura.contract.rest.responses.auth.LogoutAllResponse
 import org.penakelex.obscura.contract.rest.responses.auth.ProfileResponse
 import org.penakelex.obscura.contract.rest.responses.auth.SessionsListResponse
@@ -27,14 +28,21 @@ class AuthApiClient(
 ) : BaseApiClient(client, baseUrl, json) {
     private val paths = NetworkConfig.Rest.Paths
 
-    suspend fun register(request: RegisterRequest): SuccessResponse =
+    suspend fun challenge(request: ChallengeRequest): ChallengeResponse =
+        execute {
+            client.post("$baseUrl${paths.AUTH_CHALLENGE}") {
+                jsonBody(request)
+            }
+        }
+
+    suspend fun register(request: AuthRequest): SessionResponse =
         execute {
             client.post("$baseUrl${paths.AUTH_REGISTER}") {
                 jsonBody(request)
             }
         }
 
-    suspend fun login(request: LoginRequest): LoginResponse =
+    suspend fun login(request: AuthRequest): SessionResponse =
         execute {
             client.post("$baseUrl${paths.AUTH_LOGIN}") {
                 jsonBody(request)

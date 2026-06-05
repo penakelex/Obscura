@@ -3,7 +3,7 @@ package org.penakelex.obscura.domain.gateway
 import kotlinx.coroutines.flow.Flow
 import org.penakelex.obscura.domain.model.settings.AppSettings
 import org.penakelex.obscura.domain.model.common.CipherType
-import org.penakelex.obscura.domain.model.settings.ThemeMode  // ← импорт из domain
+import org.penakelex.obscura.domain.model.settings.ThemeMode
 
 interface SettingsGateway {
     fun observe(): Flow<AppSettings>

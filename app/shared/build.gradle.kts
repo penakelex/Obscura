@@ -7,10 +7,15 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    jvm()
+    jvm {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_21
+        }
+    }
 
     android {
         namespace = "org.penakelex.obscura.app.shared"
@@ -50,7 +55,7 @@ kotlin {
         }
         commonMain.dependencies {
             api(projects.core)
-            api(projects.proto)
+            api(projects.protolite)
 
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
@@ -64,12 +69,13 @@ kotlin {
 
             implementation(libs.androidx.navigation.compose)
 
+            implementation(libs.kotlinx.serialization.json)
+
             implementation(libs.multiplatform.markdown.renderer.m3)
             implementation(libs.kotlinx.datetime)
 
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.sqlite.bundled)
-            implementation(libs.androidx.room.sqlite.wrapper)
 
             api(libs.koin.core)
             api(libs.koin.compose)

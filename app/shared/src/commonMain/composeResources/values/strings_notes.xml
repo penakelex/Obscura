@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notes">Заметки</string>
+    <string name="note">Заметка</string>
+    <string name="create_note">Создать заметку</string>
+    <string name="edit_note">Редактировать заметку</string>
+    <string name="delete_note">Удалить заметку</string>
+    <string name="delete_note_confirm">Вы уверены, что хотите удалить эту заметку?</string>
+    <string name="note_saved">Заметка сохранена</string>
+    <string name="note_deleted">Заметка удалена</string>
+    <string name="note_created">Заметка создана</string>
+    <string name="no_notes">Нет заметок</string>
+    <string name="create_first_note">Создайте свою первую заметку</string>
+    <string name="note_content_placeholder"># Заголовок\n\n**Жирный**, *курсив*, `код`</string>
+    <string name="editor">Редактор</string>
+    <string name="preview">Предпросмотр</string>
+    <string name="split">Разделённый</string>
+    <string name="sync_status_synced">Синхронизировано</string>
+    <string name="sync_status_pending">Ожидает синхронизации</string>
+    <string name="sync_status_conflict">Конфликт версий</string>
+    <string name="editor_mode_editor">Редактор</string>
+    <string name="editor_mode_preview">Предпросмотр</string>
+    <string name="editor_mode_split">Разделённый</string>
+    <string name="search_notes">Поиск заметок</string>
+    <string name="no_search_results">Ничего не найдено</string>
+    <string name="search_no_results_message">Попробуйте изменить запрос</string>
+    <string name="select_all">Выбрать все</string>
+    <string name="deselect_all">Снять выделение</string>
+    <string name="delete_selected">Удалить (%1$d)</string>
+    <string name="note_restored">Заметка восстановлена</string>
+    <string name="corrupted_notes_warning">Повреждённых заметок: %1$d</string>
+    <string name="sync_in_progress">Синхронизация…</string>
+    <string name="more_options">Дополнительные опции</string>
+    <string name="untitled_note">Без названия</string>
+    <string name="selected_count">Выбрано: %1$d</string>
+    <string name="discard_changes">Отменить изменения</string>
+    <string name="discard_changes_confirm">У вас есть несохранённые изменения. Отменить их?</string>
+    <string name="sync_requires_auth">Синхронизация доступна после входа в аккаунт</string>
+    <string name="account_requires_auth">Войдите в аккаунт для управления профилем</string>
+    <string name="sessions_requires_auth">Войдите в аккаунт для просмотра сессий</string>
+    <string name="note_local_only">Локальная</string>
+    <string name="note_local_only_description">Хранится только на этом устройстве</string>
+    <string name="cipher_aes_gcm_short">AES</string>
+    <string name="cipher_xchacha20_short">XChaCha</string>
+</resources>

@@ -1,12 +1,12 @@
 package org.penakelex.obscura.presentation.util.event
 
 import org.penakelex.obscura.presentation.navigation.NavRoute
+import org.penakelex.obscura.presentation.util.message.UiMessage
 
 sealed interface UiEvent {
     data class ShowSnackbar(
-        val messageRes: String,
-        val args: List<Any> = emptyList(),
-        val actionLabel: String? = null,
+        val message: UiMessage,
+        val action: SnackbarAction? = null,
     ) : UiEvent
 
     data class Navigate(
