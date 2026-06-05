@@ -1,4 +1,4 @@
-package org.penakelex.obscura.data.storage
+package org.penakelex.obscura.data.storage.exception
 
 sealed class AccountKeyStorageException(
     message: String,

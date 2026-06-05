@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import org.penakelex.obscura.data.storage.exception.TokenStorageException
 import org.penakelex.obscura.domain.model.auth.SessionData
 import java.io.File
 import java.io.FileNotFoundException

@@ -1,4 +1,4 @@
-package org.penakelex.obscura.domain.usecase.auth
+package org.penakelex.obscura.domain.usecase.auth.session
 
 import kotlinx.coroutines.flow.StateFlow
 import org.penakelex.obscura.domain.model.auth.SessionState

@@ -35,7 +35,7 @@ import obscura.app.shared.generated.resources.splash_tagline
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.penakelex.obscura.domain.model.auth.SessionState
-import org.penakelex.obscura.domain.usecase.auth.ObserveSessionUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.ObserveSessionUseCase
 import org.penakelex.obscura.presentation.navigation.NavRoute
 import org.penakelex.obscura.presentation.navigation.Navigator
 import org.penakelex.obscura.presentation.theme.ObscuraDimens

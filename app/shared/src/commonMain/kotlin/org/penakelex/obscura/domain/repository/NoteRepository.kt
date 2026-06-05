@@ -21,6 +21,7 @@ interface NoteRepository {
     )
     suspend fun delete(id: String)
     suspend fun getPendingChanges(): List<SyncableNote>
+    suspend fun getPendingCount(): Int
     suspend fun markSynced(id: String)
     suspend fun applyServerChanges(notes: List<SyncableNote>)
     suspend fun getSyncStates(ids: List<String>): List<NoteSyncState>
@@ -33,5 +34,6 @@ interface NoteRepository {
         serverIsDeleted: Boolean
     )
 
-    suspend fun purgeDeleted()
+    suspend fun purgeDeleted(): Int
+    suspend fun clearAll()
 }

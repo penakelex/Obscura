@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.penakelex.obscura.domain.exception.AuthException
-import org.penakelex.obscura.domain.usecase.auth.ListSessionsUseCase
-import org.penakelex.obscura.domain.usecase.auth.RevokeSessionUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.ListSessionsUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.RevokeSessionUseCase
 import org.penakelex.obscura.presentation.util.event.UiEvent
 import org.penakelex.obscura.presentation.util.message.UiMessage
 import org.penakelex.obscura.presentation.util.message.UiMessageMapper

@@ -1,4 +1,4 @@
-package org.penakelex.obscura.domain.usecase.auth
+package org.penakelex.obscura.domain.usecase.auth.account
 
 import org.penakelex.obscura.domain.model.auth.UserProfile
 import org.penakelex.obscura.domain.repository.AuthRepository

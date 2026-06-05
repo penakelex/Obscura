@@ -1,4 +1,4 @@
-package org.penakelex.obscura.domain.usecase.auth
+package org.penakelex.obscura.domain.usecase.auth.account
 
 import co.touchlab.kermit.Logger
 import org.penakelex.obscura.contract.rest.common.auth.KeysetData

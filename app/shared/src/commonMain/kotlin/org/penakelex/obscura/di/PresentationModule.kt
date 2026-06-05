@@ -71,6 +71,9 @@ val presentationModule: Module = module {
             changePasswordUseCase = get(),
             changeEmailUseCase = get(),
             deleteAccountUseCase = get(),
+            logoutUseCase = get(),
+            logoutAllUseCase = get(),
+            checkUnsyncedNotesUseCase = get(),
         )
     }
 

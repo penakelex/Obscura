@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.penakelex.obscura.domain.exception.AuthException
 import org.penakelex.obscura.domain.exception.ValidationException
-import org.penakelex.obscura.domain.usecase.auth.RegisterUseCase
+import org.penakelex.obscura.domain.usecase.auth.authentication.RegisterUseCase
 import org.penakelex.obscura.domain.validation.ValidationError
 import org.penakelex.obscura.presentation.navigation.NavRoute
 import org.penakelex.obscura.presentation.navigation.Navigator

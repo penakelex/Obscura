@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.penakelex.obscura.data.storage.exception.AccountKeyStorageException
 import java.io.File
 import java.io.FileNotFoundException
 

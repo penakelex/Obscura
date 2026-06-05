@@ -23,20 +23,50 @@ class SyncNotesUseCase(
         }
 
         return try {
-            val result = executeSyncRound()
-            logger.i {
-                "Sync completed: applied ${result.appliedCount} local, " +
-                        "received ${result.receivedCount} server changes"
-            }
-            true
+            performSync()
         } catch (e: SyncException.Unauthenticated) {
-            logger.w(e) { "Auth error during sync — forcing logout" }
+            logger.w(e) {
+                "Auth error during sync — forcing logout"
+            }
             authRepository.logout()
             false
+        } catch (e: SyncException.ServerUnavailable) {
+            logger.w(e) {
+                "Server unavailable, resetting connection " +
+                        "and retrying"
+            }
+            syncGateway.resetConnection()
+            retrySync()
         } catch (e: SyncException) {
             logger.e(e) { "Sync failed: ${e.message}" }
             false
         }
+    }
+
+    private suspend fun retrySync(): Boolean = try {
+        performSync()
+    } catch (e: SyncException.Unauthenticated) {
+        logger.w(e) {
+            "Auth error on retry — forcing logout"
+        }
+        authRepository.logout()
+        false
+    } catch (e: SyncException) {
+        logger.e(e) {
+            "Retry after connection reset also failed: " +
+                    e.message
+        }
+        false
+    }
+
+    private suspend fun performSync(): Boolean {
+        val result = executeSyncRound()
+        logger.i {
+            "Sync completed: applied ${result.appliedCount} " +
+                    "local, received ${result.receivedCount} " +
+                    "server changes"
+        }
+        return true
     }
 
     private suspend fun executeSyncRound(): SyncRoundResult {
@@ -44,8 +74,8 @@ class SyncNotesUseCase(
         val lastSyncTimestamp = loadLastSyncTimestamp()
 
         logger.d {
-            "Sync round: ${pendingChanges.size} pending changes, " +
-                    "lastSyncTs=$lastSyncTimestamp"
+            "Sync round: ${pendingChanges.size} pending " +
+                    "changes, lastSyncTs=$lastSyncTimestamp"
         }
 
         val result =
@@ -58,23 +88,25 @@ class SyncNotesUseCase(
                 markLocalAsSynced(pendingChanges)
                 saveLastSyncTimestamp(result.newSyncTimestamp)
             }
-
             SyncResultStatus.PARTIAL -> {
-                logger.w { "Partial sync — applying what we got" }
+                logger.w {
+                    "Partial sync — applying what we got"
+                }
                 applyServerChanges(result)
                 saveLastSyncTimestamp(result.newSyncTimestamp)
             }
-
             SyncResultStatus.AUTH_ERROR -> {
                 throw SyncException.Unauthenticated(
-                    IllegalStateException("Server returned AUTH_ERROR")
+                    IllegalStateException(
+                        "Server returned AUTH_ERROR",
+                    ),
                 )
             }
         }
 
         return SyncRoundResult(
             appliedCount = pendingChanges.size,
-            receivedCount = result.serverChanges.size
+            receivedCount = result.serverChanges.size,
         )
     }
 
@@ -82,28 +114,30 @@ class SyncNotesUseCase(
         val localStates = noteRepository
             .getSyncStates(result.serverChanges.map { it.id })
             .associateBy { it.id }
+
         for (serverNote in result.serverChanges) {
             val localState = localStates[serverNote.id]
+
             when {
                 localState == null -> {
                     noteRepository.applyServerChanges(
-                        listOf(
-                            serverNote
-                        )
+                        listOf(serverNote),
                     )
                 }
                 serverNote.updatedAt > localState.updatedAt -> {
                     noteRepository.resolveConflict(
                         id = serverNote.id,
-                        serverEncryptedData = serverNote.encryptedData,
+                        serverEncryptedData =
+                            serverNote.encryptedData,
                         serverCipherType = serverNote.cipherType,
                         serverUpdatedAt = serverNote.updatedAt,
-                        serverIsDeleted = serverNote.isDeleted
+                        serverIsDeleted = serverNote.isDeleted,
                     )
                 }
                 else -> {
                     logger.d {
-                        "Ignoring older server note ${serverNote.id}"
+                        "Ignoring older server note " +
+                                serverNote.id
                     }
                 }
             }
@@ -111,23 +145,27 @@ class SyncNotesUseCase(
     }
 
     private suspend fun markLocalAsSynced(
-        changes: List<SyncableNote>
+        changes: List<SyncableNote>,
     ) {
         changes.forEach { noteRepository.markSynced(it.id) }
+
         if (changes.any { it.isDeleted }) {
             noteRepository.purgeDeleted()
         }
     }
 
     private var lastSyncTimestamp: Long = 0L
-    private fun loadLastSyncTimestamp(): Long = lastSyncTimestamp
+
+    private fun loadLastSyncTimestamp(): Long =
+        lastSyncTimestamp
+
     private fun saveLastSyncTimestamp(ts: Long) {
         lastSyncTimestamp = ts
     }
 
     private data class SyncRoundResult(
         val appliedCount: Int,
-        val receivedCount: Int
+        val receivedCount: Int,
     )
 
     private companion object {

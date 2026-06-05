@@ -6,5 +6,8 @@ data class AccountUiState(
     val isPasswordDialogVisible: Boolean = false,
     val isEmailDialogVisible: Boolean = false,
     val isDeleteDialogVisible: Boolean = false,
+    val isLogoutDialogVisible: Boolean = false,
+    val isLogoutAllDialogVisible: Boolean = false,
     val isOperationInProgress: Boolean = false,
+    val pendingNotesCount: Int = 0,
 )

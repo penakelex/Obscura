@@ -12,10 +12,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.penakelex.obscura.domain.exception.AuthException
 import org.penakelex.obscura.domain.exception.ValidationException
-import org.penakelex.obscura.domain.usecase.auth.ChangeEmailUseCase
-import org.penakelex.obscura.domain.usecase.auth.ChangePasswordUseCase
-import org.penakelex.obscura.domain.usecase.auth.DeleteAccountUseCase
-import org.penakelex.obscura.domain.usecase.auth.GetProfileUseCase
+import org.penakelex.obscura.domain.usecase.auth.account.ChangeEmailUseCase
+import org.penakelex.obscura.domain.usecase.auth.account.ChangePasswordUseCase
+import org.penakelex.obscura.domain.usecase.auth.account.DeleteAccountUseCase
+import org.penakelex.obscura.domain.usecase.auth.account.GetProfileUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.LogoutAllUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.LogoutUseCase
+import org.penakelex.obscura.domain.usecase.note.CheckUnsyncedNotesUseCase
 import org.penakelex.obscura.presentation.util.error.UiError
 import org.penakelex.obscura.presentation.util.error.UiErrorMapper
 import org.penakelex.obscura.presentation.util.event.UiEvent
@@ -27,8 +30,10 @@ class AccountViewModel(
     private val changePasswordUseCase: ChangePasswordUseCase,
     private val changeEmailUseCase: ChangeEmailUseCase,
     private val deleteAccountUseCase: DeleteAccountUseCase,
+    private val logoutUseCase: LogoutUseCase,
+    private val logoutAllUseCase: LogoutAllUseCase,
+    private val checkUnsyncedNotesUseCase: CheckUnsyncedNotesUseCase,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(AccountUiState())
     val uiState: StateFlow<AccountUiState> = _uiState.asStateFlow()
 
@@ -79,6 +84,30 @@ class AccountViewModel(
         _uiState.update { it.copy(isDeleteDialogVisible = true) }
     }
 
+    fun onLogoutClick() {
+        viewModelScope.launch {
+            val pendingCount = checkUnsyncedNotesUseCase()
+            _uiState.update {
+                it.copy(
+                    isLogoutDialogVisible = true,
+                    pendingNotesCount = pendingCount,
+                )
+            }
+        }
+    }
+
+    fun onLogoutAllClick() {
+        viewModelScope.launch {
+            val pendingCount = checkUnsyncedNotesUseCase()
+            _uiState.update {
+                it.copy(
+                    isLogoutAllDialogVisible = true,
+                    pendingNotesCount = pendingCount,
+                )
+            }
+        }
+    }
+
     fun onPasswordDialogDismiss() {
         _uiState.update { it.copy(isPasswordDialogVisible = false) }
     }
@@ -89,6 +118,52 @@ class AccountViewModel(
 
     fun onDeleteDialogDismiss() {
         _uiState.update { it.copy(isDeleteDialogVisible = false) }
+    }
+
+    fun onLogoutDialogDismiss() {
+        _uiState.update { it.copy(isLogoutDialogVisible = false) }
+    }
+
+    fun onLogoutAllDialogDismiss() {
+        _uiState.update { it.copy(isLogoutAllDialogVisible = false) }
+    }
+
+    fun onLogoutConfirmed() {
+        viewModelScope.launch {
+            try {
+                logoutUseCase()
+                _events.send(
+                    UiEvent.ShowSnackbar(
+                        message = UiMessage.Success.LogoutSuccessful,
+                    )
+                )
+            } catch (e: Exception) {
+                _events.send(
+                    UiEvent.ShowSnackbar(
+                        message = UiMessage.Error.Unknown(e.message),
+                    )
+                )
+            }
+        }
+    }
+
+    fun onLogoutAllConfirmed() {
+        viewModelScope.launch {
+            try {
+                logoutAllUseCase()
+                _events.send(
+                    UiEvent.ShowSnackbar(
+                        message = UiMessage.Success.LogoutSuccessful,
+                    )
+                )
+            } catch (e: Exception) {
+                _events.send(
+                    UiEvent.ShowSnackbar(
+                        message = UiMessage.Error.Unknown(e.message),
+                    )
+                )
+            }
+        }
     }
 
     fun changePassword(
@@ -252,7 +327,6 @@ class AccountViewModel(
                     )
                 )
             }
-
             is AuthException.SessionExpired,
             is AuthException.SessionNotFound -> {
                 _events.send(
@@ -261,7 +335,6 @@ class AccountViewModel(
                     )
                 )
             }
-
             else -> {
                 _events.send(
                     UiEvent.ShowSnackbar(

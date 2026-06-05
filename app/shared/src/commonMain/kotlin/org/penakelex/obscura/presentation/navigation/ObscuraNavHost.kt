@@ -12,7 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import org.koin.compose.koinInject
 import org.penakelex.obscura.domain.model.auth.SessionState
-import org.penakelex.obscura.domain.usecase.auth.ObserveSessionUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.ObserveSessionUseCase
 import org.penakelex.obscura.presentation.components.common.ObscuraSnackbarHostState
 import org.penakelex.obscura.presentation.screens.account.AccountScreen
 import org.penakelex.obscura.presentation.screens.auth.login.LoginScreen

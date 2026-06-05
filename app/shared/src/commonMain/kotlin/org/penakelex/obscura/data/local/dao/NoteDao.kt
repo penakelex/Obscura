@@ -43,6 +43,16 @@ interface NoteDao {
 
     @Query(
         """
+    SELECT COUNT(*) FROM notes
+    WHERE syncStatus != :syncedStatus AND isLocalOnly = 0
+    """
+    )
+    suspend fun getPendingCount(
+        syncedStatus: SyncStatus = SyncStatus.SYNCED
+    ): Int
+
+    @Query(
+        """
         SELECT id, syncStatus, updatedAt, isDeleted FROM notes
         WHERE id IN (:ids)
         """
@@ -144,5 +154,11 @@ interface NoteDao {
         WHERE isDeleted = 1 AND syncStatus = :syncedStatus
         """
     )
-    suspend fun purgeDeleted(syncedStatus: SyncStatus = SyncStatus.SYNCED)
+    suspend fun purgeDeleted(
+        syncedStatus: SyncStatus = SyncStatus.SYNCED,
+    ): Int
+
+    @Transaction
+    @Query("DELETE FROM notes")
+    suspend fun deleteAll()
 }

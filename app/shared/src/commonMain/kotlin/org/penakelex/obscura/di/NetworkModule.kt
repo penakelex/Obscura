@@ -22,12 +22,8 @@ val networkModule: Module = module {
     }
 
     single { AuthMetadataInterceptor(tokenStorage = get()) }
+    single { GrpcChannelFactory(authInterceptor = get()) }
     single {
-        GrpcChannelFactory.create(
-            interceptor = get<AuthMetadataInterceptor>(),
-        )
-    }
-    single {
-        SyncApiClient(channel = get())
+        SyncApiClient(channelFactory = get())
     } onClose { it?.shutdown() }
 }

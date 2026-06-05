@@ -5,19 +5,20 @@ import org.koin.dsl.module
 import org.penakelex.obscura.data.crypto.CryptoProvider
 import org.penakelex.obscura.domain.repository.AuthRepository
 import org.penakelex.obscura.domain.repository.NoteRepository
-import org.penakelex.obscura.domain.usecase.auth.AccountBootstrapUseCase
-import org.penakelex.obscura.domain.usecase.auth.ChangeEmailUseCase
-import org.penakelex.obscura.domain.usecase.auth.ChangePasswordUseCase
-import org.penakelex.obscura.domain.usecase.auth.DeleteAccountUseCase
-import org.penakelex.obscura.domain.usecase.auth.GetProfileUseCase
-import org.penakelex.obscura.domain.usecase.auth.ListSessionsUseCase
-import org.penakelex.obscura.domain.usecase.auth.LoginUseCase
-import org.penakelex.obscura.domain.usecase.auth.LogoutAllUseCase
-import org.penakelex.obscura.domain.usecase.auth.LogoutUseCase
-import org.penakelex.obscura.domain.usecase.auth.MigrateGuestNotesUseCase
-import org.penakelex.obscura.domain.usecase.auth.ObserveSessionUseCase
-import org.penakelex.obscura.domain.usecase.auth.RegisterUseCase
-import org.penakelex.obscura.domain.usecase.auth.RevokeSessionUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.AccountBootstrapUseCase
+import org.penakelex.obscura.domain.usecase.auth.account.ChangeEmailUseCase
+import org.penakelex.obscura.domain.usecase.auth.account.ChangePasswordUseCase
+import org.penakelex.obscura.domain.usecase.auth.account.DeleteAccountUseCase
+import org.penakelex.obscura.domain.usecase.auth.account.GetProfileUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.ListSessionsUseCase
+import org.penakelex.obscura.domain.usecase.auth.authentication.LoginUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.LogoutAllUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.LogoutUseCase
+import org.penakelex.obscura.domain.usecase.auth.authentication.MigrateGuestNotesUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.ObserveSessionUseCase
+import org.penakelex.obscura.domain.usecase.auth.authentication.RegisterUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.RevokeSessionUseCase
+import org.penakelex.obscura.domain.usecase.note.CheckUnsyncedNotesUseCase
 import org.penakelex.obscura.domain.usecase.note.CreateNoteUseCase
 import org.penakelex.obscura.domain.usecase.note.DeleteNoteUseCase
 import org.penakelex.obscura.domain.usecase.note.GetNoteUseCase
@@ -64,6 +65,7 @@ val useCaseModule: Module = module {
             authRepository = get<AuthRepository>(),
             guestCryptoManager = get(),
             accountKeyStorage = get(),
+            noteRepository = get<NoteRepository>(),
         )
     }
     factory {
@@ -71,6 +73,7 @@ val useCaseModule: Module = module {
             authRepository = get<AuthRepository>(),
             guestCryptoManager = get(),
             accountKeyStorage = get(),
+            noteRepository = get<NoteRepository>(),
         )
     }
     factory {
@@ -121,5 +124,10 @@ val useCaseModule: Module = module {
     }
     factory {
         ObserveNotesUseCase(noteRepository = get<NoteRepository>())
+    }
+    factory {
+        CheckUnsyncedNotesUseCase(
+            noteRepository = get<NoteRepository>(),
+        )
     }
 }

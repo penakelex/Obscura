@@ -14,13 +14,12 @@ class SyncGatewayImpl(
 ) : SyncGateway {
     override suspend fun sync(
         localChanges: List<SyncableNote>,
-        lastSyncTimestamp: Long
+        lastSyncTimestamp: Long,
     ): SyncResult {
         val request = SyncRequest(
             localChanges = localChanges,
             lastSyncTimestamp = lastSyncTimestamp,
         )
-
         return try {
             syncApiClient
                 .sync(flowOf(request))
@@ -28,9 +27,12 @@ class SyncGatewayImpl(
         } catch (_: NoSuchElementException) {
             throw SyncException.ServerUnavailable(
                 IllegalStateException(
-                    "Sync stream closed without response"
-                )
+                    "Sync stream closed without response",
+                ),
             )
         }
     }
+
+    override suspend fun resetConnection() =
+        syncApiClient.resetChannel()
 }

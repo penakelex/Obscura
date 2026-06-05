@@ -6,6 +6,8 @@ import org.penakelex.obscura.domain.model.sync.SyncResult
 interface SyncGateway {
     suspend fun sync(
         localChanges: List<SyncableNote>,
-        lastSyncTimestamp: Long
+        lastSyncTimestamp: Long,
     ): SyncResult
+
+    suspend fun resetConnection()
 }

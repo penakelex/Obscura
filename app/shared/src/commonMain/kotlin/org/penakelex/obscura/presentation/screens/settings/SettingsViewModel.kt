@@ -17,9 +17,9 @@ import org.penakelex.obscura.domain.exception.SyncException
 import org.penakelex.obscura.domain.model.auth.SessionState
 import org.penakelex.obscura.domain.model.common.CipherType
 import org.penakelex.obscura.domain.model.settings.ThemeMode
-import org.penakelex.obscura.domain.usecase.auth.LogoutAllUseCase
-import org.penakelex.obscura.domain.usecase.auth.LogoutUseCase
-import org.penakelex.obscura.domain.usecase.auth.ObserveSessionUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.LogoutAllUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.LogoutUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.ObserveSessionUseCase
 import org.penakelex.obscura.domain.usecase.settings.GetSettingsUseCase
 import org.penakelex.obscura.domain.usecase.settings.SetDefaultCipherTypeUseCase
 import org.penakelex.obscura.domain.usecase.settings.SetThemeModeUseCase

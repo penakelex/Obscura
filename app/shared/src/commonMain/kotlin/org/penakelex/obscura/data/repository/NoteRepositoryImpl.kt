@@ -50,21 +50,20 @@ class NoteRepositoryImpl(
 
             NotesResult(
                 notes = notes,
-                corruptedNoteIds = corruptedIds
+                corruptedNoteIds = corruptedIds,
             )
         }
 
-    override suspend fun getById(id: String): Note {
-        val entity = noteDao.getById(id)
+    override suspend fun getById(id: String): Note =
+        noteDao.getById(id)?.toNote()
             ?: throw ObscuraDomainException.NoteNotFoundException(id)
-        return entity.toNote()
-    }
 
     override suspend fun create(
         content: String,
         cipherType: CipherType,
     ): String {
         ensureInitialized()
+
         val id = Uuid.random().toString()
         val encryptedData = cryptoProvider.encrypt(
             content.encodeToByteArray(),
@@ -72,18 +71,23 @@ class NoteRepositoryImpl(
         )
         val isLocalOnly = !authRepository.isLoggedIn()
 
-        val entity = NoteEntity(
-            id = id,
-            encryptedData = encryptedData,
-            cipherType = cipherType,
-            updatedAt = Clock.System.now().toEpochMilliseconds(),
-            syncStatus = if (isLocalOnly) SyncStatus.SYNCED else SyncStatus.PENDING,
-            version = 1,
-            isDeleted = false,
-            isLocalOnly = isLocalOnly,
+        noteDao.upsert(
+            NoteEntity(
+                id = id,
+                encryptedData = encryptedData,
+                cipherType = cipherType,
+                updatedAt = Clock.System.now().toEpochMilliseconds(),
+                syncStatus =
+                    if (isLocalOnly) SyncStatus.SYNCED
+                    else SyncStatus.PENDING,
+                version = 1,
+                isDeleted = false,
+                isLocalOnly = isLocalOnly,
+            )
         )
-        noteDao.upsert(entity)
-        logger.d { "Created note: $id (cipher=$cipherType, localOnly=$isLocalOnly)" }
+        logger.d {
+            "Created note: $id (cipher=$cipherType, localOnly=$isLocalOnly)"
+        }
         return id
     }
 
@@ -117,7 +121,7 @@ class NoteRepositoryImpl(
     override suspend fun delete(id: String) {
         noteDao.softDelete(
             id = id,
-            timestamp = Clock.System.now().toEpochMilliseconds()
+            timestamp = Clock.System.now().toEpochMilliseconds(),
         )
         logger.d { "Soft-deleted note: $id" }
     }
@@ -127,6 +131,9 @@ class NoteRepositoryImpl(
             .filter { !it.isLocalOnly }
             .toSyncableNotes()
 
+    override suspend fun getPendingCount(): Int =
+        noteDao.getPendingCount()
+
     override suspend fun markSynced(id: String) {
         noteDao.markSynced(
             id = id,
@@ -134,7 +141,9 @@ class NoteRepositoryImpl(
         )
     }
 
-    override suspend fun applyServerChanges(notes: List<SyncableNote>) {
+    override suspend fun applyServerChanges(
+        notes: List<SyncableNote>,
+    ) {
         noteDao.upsertAll(notes.toEntities())
         logger.i { "Applied ${notes.size} server changes" }
     }
@@ -154,7 +163,7 @@ class NoteRepositoryImpl(
 
         noteDao.restore(
             id = id,
-            timestamp = Clock.System.now().toEpochMilliseconds()
+            timestamp = Clock.System.now().toEpochMilliseconds(),
         )
         logger.d { "Restored note: $id" }
     }
@@ -171,15 +180,28 @@ class NoteRepositoryImpl(
             encryptedData = serverEncryptedData,
             cipherType = serverCipherType,
             updatedAt = serverUpdatedAt,
-            isDeleted = serverIsDeleted
+            isDeleted = serverIsDeleted,
         )
         logger.i {
             "Conflict resolved for note: $id (accepted server version, deleted=$serverIsDeleted)"
         }
     }
 
-    override suspend fun purgeDeleted() {
-        noteDao.purgeDeleted()
+    override suspend fun purgeDeleted(): Int {
+        val count = noteDao.purgeDeleted()
+
+        if (count > 0) {
+            logger.i {
+                "Purged $count deleted note(s) from local database"
+            }
+        }
+
+        return count
+    }
+
+    override suspend fun clearAll() {
+        noteDao.deleteAll()
+        logger.i { "All notes cleared from local database" }
     }
 
     private fun ensureInitialized() {
@@ -193,8 +215,6 @@ class NoteRepositoryImpl(
             cryptoProvider.decrypt(encryptedData, cipherType)
                 .decodeToString()
         } catch (e: CryptoException) {
-            e.printStackTrace()
-
             throw ObscuraDomainException.DecryptionException(
                 noteId = id,
                 cause = e

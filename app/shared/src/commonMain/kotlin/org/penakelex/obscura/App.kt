@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import org.koin.compose.koinInject
 import org.penakelex.obscura.data.crypto.GuestCryptoManager
 import org.penakelex.obscura.data.storage.TokenStorage
-import org.penakelex.obscura.domain.usecase.auth.AccountBootstrapUseCase
+import org.penakelex.obscura.domain.usecase.auth.session.AccountBootstrapUseCase
 import org.penakelex.obscura.presentation.components.common.ObscuraSnackbarHost
 import org.penakelex.obscura.presentation.components.common.ObscuraSnackbarHostState
 import org.penakelex.obscura.presentation.navigation.ObscuraNavHost
